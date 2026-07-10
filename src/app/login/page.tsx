@@ -1,30 +1,40 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
-import { setStudentSession } from "@/lib/student-auth";
+import { FormEvent, Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useAuth } from "@/components/AuthProvider";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
-  const [email, setEmail] = useState("student@gmail.com");
-  const [password, setPassword] = useState("123456");
-  const [error, setError] = useState("");
+  const searchParams = useSearchParams();
+  const { login } = useAuth();
 
-  const submit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!email.trim() || !password.trim()) {
-      setError("Vui lòng nhập email và mật khẩu.");
+  const redirect = searchParams.get("redirect") || "/dashboard";
+  const expired = searchParams.get("expired") === "1";
+
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const submit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!username.trim() || !password.trim()) {
+      setError("Vui lòng nhập tài khoản và mật khẩu.");
       return;
     }
-
-    const displayName = email.split("@")[0].replace(/[._-]/g, " ");
-    setStudentSession({
-      email,
-      name: displayName.charAt(0).toUpperCase() + displayName.slice(1),
-      role: "STUDENT",
-    });
-    router.replace("/dashboard");
+    setError("");
+    setLoading(true);
+    try {
+      await login(username.trim(), password);
+      router.replace(redirect);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Đăng nhập thất bại.";
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -40,7 +50,7 @@ export default function LoginPage() {
         <div>
           <span className="eyebrow">Học tập tập trung</span>
           <h1>Đăng nhập để tiếp tục khóa học, quiz và chứng chỉ của bạn.</h1>
-          <p>Giao diện này đang dùng session mẫu ở frontend để kiểm thử luồng UI. Khi nối API, form sẽ gọi auth service thật.</p>
+          <p>Theo dõi tiến độ từng bài, hoàn thành quiz bắt buộc và nhận chứng chỉ khi đủ điều kiện.</p>
         </div>
         <div className="login-benefits">
           <span>Theo dõi tiến độ từng khóa</span>
@@ -55,23 +65,64 @@ export default function LoginPage() {
           <h2>Chào mừng quay lại</h2>
           <p>Dùng tài khoản học viên để vào lớp học.</p>
         </div>
+
+        {expired && (
+          <div className="form-info">
+            Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.
+          </div>
+        )}
+
         <form onSubmit={submit} className="auth-form">
           <label className="form-field">
-            <span>Email</span>
-            <input value={email} onChange={(event) => setEmail(event.target.value)} type="email" placeholder="student@gmail.com" />
+            <span>Tài khoản</span>
+            <input
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              type="text"
+              placeholder="Email hoặc username"
+              disabled={loading}
+              autoComplete="username"
+            />
           </label>
           <label className="form-field">
             <span>Mật khẩu</span>
-            <input value={password} onChange={(event) => setPassword(event.target.value)} type="password" placeholder="Nhập mật khẩu" />
+            <input
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              type="password"
+              placeholder="Nhập mật khẩu"
+              disabled={loading}
+              autoComplete="current-password"
+            />
           </label>
           {error && <div className="form-error">{error}</div>}
-          <button className="primary-button full-button" type="submit">Đăng nhập</button>
+          <button className="primary-button full-button" type="submit" disabled={loading}>
+            {loading ? "Đang đăng nhập..." : "Đăng nhập"}
+          </button>
         </form>
-        <div className="demo-account">
-          <strong>Tài khoản test</strong>
-          <span>student@gmail.com / 123456</span>
+        <div className="form-footer" style={{ marginTop: 10 }}>
+          <Link href="/forgot-password">Quên mật khẩu?</Link>
+        </div>
+        <div className="form-footer">
+          Chưa có tài khoản?{" "}
+          <Link href="/register">Đăng ký</Link>
         </div>
       </section>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <main className="loading-screen">
+        <div className="loading-card">
+          <span className="brand-symbol">E</span>
+          <strong>Đang tải...</strong>
+        </div>
+      </main>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }

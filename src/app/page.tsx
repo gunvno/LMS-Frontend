@@ -1,9 +1,57 @@
-import Image from "next/image";
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { CourseCard } from "@/components/CourseCard";
-import { courses, learningPlan, studentStats } from "@/lib/student-data";
+import { courseService } from "@/services/course.service";
+import { learningService } from "@/services/learning.service";
+import type { Course, Certificate } from "@/lib/types";
+import { useToast } from "@/components/Toast";
+import { useAuth } from "@/components/AuthProvider";
+import { BookOpen, Award, TrendingUp, ListChecks, Search } from "lucide-react";
+
+function normalizeList<T>(data: unknown): T[] {
+  if (Array.isArray(data)) return data as T[];
+  if (data && typeof data === "object" && "content" in data && Array.isArray((data as { content: unknown }).content))
+    return (data as { content: T[] }).content;
+  return [];
+}
 
 export default function Home() {
+  const toast = useToast();
+  const { isAuthenticated, isLoading, user } = useAuth();
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [verifyCode, setVerifyCode] = useState("");
+  const [verifyResult, setVerifyResult] = useState<Certificate | null>(null);
+  const [verifying, setVerifying] = useState(false);
+
+  useEffect(() => {
+    courseService.getCourses({ page: 0, size: 6 })
+      .then((data) => {
+        const list = normalizeList<Course>(data);
+        setCourses(list.filter((c) => !c.status || c.status === "PUBLISHED").slice(0, 6));
+      })
+      .catch(() => {});
+  }, []);
+
+  const verifyCertificate = async () => {
+    if (!verifyCode.trim()) return;
+    setVerifying(true);
+    setVerifyResult(null);
+    try {
+      const result = await learningService.verifyCertificate(verifyCode.trim());
+      setVerifyResult(result);
+    } catch {
+      toast.error("Không tìm thấy chứng chỉ với mã này.");
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const displayName = user
+    ? `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.username || user.email
+    : "Học viên";
+
   return (
     <main className="student-shell">
       <header className="student-nav">
@@ -16,109 +64,150 @@ export default function Home() {
         </Link>
         <nav className="nav-links" aria-label="Điều hướng trang chủ">
           <a href="#courses">Khóa học</a>
-          <a href="#plan">Lịch học</a>
+          <a href="#benefits">Tính năng</a>
           <a href="#certificates">Chứng chỉ</a>
-          <a href="#support">Hỗ trợ</a>
         </nav>
         <div className="student-actions">
-          <Link className="ghost-button" href="/login">Đăng nhập</Link>
-          <Link className="primary-button" href="/dashboard">Vào lớp học</Link>
+          {!isLoading && isAuthenticated ? (
+            <>
+              <Link className="ghost-button" href="/dashboard">{displayName}</Link>
+              <Link className="primary-button" href="/dashboard">Vào học</Link>
+            </>
+          ) : (
+            <>
+              <Link className="ghost-button" href="/login">Đăng nhập</Link>
+              <Link className="primary-button" href="/register">Đăng ký</Link>
+            </>
+          )}
         </div>
       </header>
 
       <section id="top" className="hero-grid">
         <div className="hero-copy">
-          <div className="eyebrow">Xin chào, học viên</div>
-          <h1>Học tiếp nội dung đang dở, theo dõi tiến độ và sẵn sàng cho bài quiz tiếp theo.</h1>
+          <div className="eyebrow">Nền tảng học tập</div>
+          <h1>Học kỹ năng mới, theo dõi tiến độ và nhận chứng chỉ.</h1>
           <p>
-            Giao diện học tập tập trung vào việc học thật: bài đang học, tiến độ khóa học,
-            deadline quiz và chứng chỉ sắp đạt được.
+            EduFlow giúp bạn tiếp cận khóa học chất lượng, hoàn thành bài tập thực hành,
+            quiz kiểm tra và nhận chứng chỉ khi đủ điều kiện.
           </p>
           <div className="hero-actions">
-            <Link className="primary-button large" href="/login">Bắt đầu học</Link>
+            <Link className="primary-button large" href={isAuthenticated ? "/dashboard" : "/register"}>
+              {isAuthenticated ? "Vào học tiếp" : "Bắt đầu học"}
+            </Link>
             <Link className="ghost-button large" href="/courses">Xem khóa học</Link>
           </div>
         </div>
 
-        <aside className="continue-card" aria-label="Tiếp tục học">
-          <div className="continue-media">
-            <Image
-              src="https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1000&q=80"
-              alt="Không gian học lập trình với laptop"
-              width={1000}
-              height={650}
-              priority
-            />
-          </div>
-          <div className="continue-body">
-            <span className="pill">Đang học</span>
-            <h2>Feign Client giữa Learning Service và Course Service</h2>
-            <p>Module 4 - Giao tiếp Microservices</p>
-            <div className="progress-line" aria-label="Tiến độ khóa học 68 phần trăm">
-              <span style={{ width: "68%" }} />
-            </div>
-            <div className="continue-footer">
-              <span>68% hoàn thành</span>
-              <strong>18 phút còn lại</strong>
+        <aside className="continue-card" aria-label="Giới thiệu">
+          <div className="continue-body" style={{ padding: 28 }}>
+            <span className="pill">Miễn phí</span>
+            <h2 style={{ marginTop: 16 }}>Đăng ký và bắt đầu học ngay</h2>
+            <p>Truy cập khóa học, bài giảng video, quiz và chứng chỉ hoàn toàn miễn phí.</p>
+            <div style={{ display: "grid", gap: 12, marginTop: 20 }}>
+              <span className="login-benefits-item">
+                <BookOpen size={18} /> Khóa học chất lượng
+              </span>
+              <span className="login-benefits-item">
+                <ListChecks size={18} /> Quiz kiểm tra kiến thức
+              </span>
+              <span className="login-benefits-item">
+                <Award size={18} /> Chứng chỉ hoàn thành
+              </span>
+              <span className="login-benefits-item">
+                <TrendingUp size={18} /> Theo dõi tiến độ
+              </span>
             </div>
           </div>
         </aside>
       </section>
 
-      <section className="stats-row" aria-label="Tổng quan học tập">
-        {studentStats.map((stat) => (
-          <div className="stat-card" key={stat.label}>
-            <span>{stat.label}</span>
-            <strong>{stat.value}</strong>
-            <small>{stat.note}</small>
+      {courses.length > 0 && (
+        <section id="courses" className="content-section">
+          <div className="section-heading">
+            <div>
+              <span className="eyebrow">Khóa học</span>
+              <h2>Khóa học nổi bật</h2>
+            </div>
+            <Link href="/courses">Xem tất cả</Link>
           </div>
-        ))}
-      </section>
-
-      <section id="courses" className="content-section">
-        <div className="section-heading">
-          <div>
-            <span className="eyebrow">Đang học</span>
-            <h2>Khóa học nổi bật</h2>
+          <div className="course-grid">
+            {courses.map((course) => <CourseCard course={course} key={course.id} />)}
           </div>
-          <Link href="/courses">Xem tất cả</Link>
-        </div>
-        <div className="course-grid">
-          {courses.map((course) => <CourseCard course={course} key={course.id} />)}
-        </div>
-      </section>
+        </section>
+      )}
 
-      <section id="plan" className="two-column-section">
+      <section id="benefits" className="two-column-section" style={{ marginTop: 40 }}>
         <div className="panel-card">
           <div className="section-heading compact">
             <div>
-              <span className="eyebrow">Hôm nay</span>
-              <h2>Kế hoạch học tập</h2>
+              <span className="eyebrow">Tại sao chọn EduFlow</span>
+              <h2>Tính năng nổi bật</h2>
             </div>
           </div>
           <div className="timeline-list">
-            {learningPlan.map((item) => (
-              <div className="timeline-item" key={item.title}>
-                <time>{item.time}</time>
-                <div>
-                  <strong>{item.title}</strong>
-                  <span>{item.type} - {item.status}</span>
-                </div>
+            <div className="timeline-item">
+              <time><BookOpen size={18} /></time>
+              <div>
+                <strong>Bài học có cấu trúc</strong>
+                <span>Nội dung được chia thành bài học ngắn, dễ theo dõi</span>
               </div>
-            ))}
+            </div>
+            <div className="timeline-item">
+              <time><TrendingUp size={18} /></time>
+              <div>
+                <strong>Theo dõi tiến độ</strong>
+                <span>Xem tiến độ hoàn thành từng khóa học</span>
+              </div>
+            </div>
+            <div className="timeline-item">
+              <time><ListChecks size={18} /></time>
+              <div>
+                <strong>Quiz kiểm tra</strong>
+                <span>Đánh giá kiến thức qua quiz trắc nghiệm</span>
+              </div>
+            </div>
+            <div className="timeline-item">
+              <time><Award size={18} /></time>
+              <div>
+                <strong>Chứng chỉ hoàn thành</strong>
+                <span>Nhận chứng chỉ khi đạt đủ điều kiện</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div id="certificates" className="panel-card certificate-card">
+        <div id="certificates" className="panel-card">
           <span className="eyebrow">Chứng chỉ</span>
-          <h2>Backend Foundation</h2>
-          <p>Đã hoàn thành 100% bài học và đạt quiz bắt buộc. Chứng chỉ có hiệu lực đến 08/07/2028.</p>
-          <div className="certificate-code">LMS-2026-A91F3C7B</div>
-          <Link className="primary-button" href="/certificates">Xem chứng chỉ</Link>
+          <h2>Tra cứu chứng chỉ</h2>
+          <p>Nhập mã chứng chỉ để xác minh tình trạng hiệu lực.</p>
+          <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+            <input
+              value={verifyCode}
+              onChange={(e) => setVerifyCode(e.target.value)}
+              placeholder="Nhập mã chứng chỉ..."
+              style={{ flex: 1 }}
+            />
+            <button
+              className="primary-button"
+              onClick={verifyCertificate}
+              disabled={verifying || !verifyCode.trim()}
+            >
+              <Search size={18} />
+            </button>
+          </div>
+          {verifyResult && (
+            <div className="verify-result" style={{ marginTop: 14 }}>
+              <strong>{verifyResult.courseName || "Chứng chỉ"}</strong>
+              <span>Mã: {verifyResult.certificateCode}</span>
+              <span style={{ color: "var(--success)", fontWeight: 800 }}>
+                {verifyResult.status === "ACTIVE" ? "Còn hiệu lực" : verifyResult.status}
+              </span>
+            </div>
+          )}
         </div>
       </section>
 
-      <footer id="support" className="student-footer">
+      <footer className="student-footer">
         <span>EduFlow LMS</span>
         <p>Cần hỗ trợ? Liên hệ mentor hoặc trung tâm hỗ trợ học viên.</p>
       </footer>

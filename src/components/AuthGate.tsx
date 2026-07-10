@@ -1,47 +1,21 @@
 "use client";
 
-import { useEffect, useMemo, useSyncExternalStore, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
-import { STUDENT_SESSION_KEY, type StudentSession } from "@/lib/student-auth";
+import { useEffect, type ReactNode } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { useAuth } from "@/components/AuthProvider";
 
-type AuthGateProps = {
-  children: (session: StudentSession) => ReactNode;
-};
-
-function subscribeToSession(listener: () => void) {
-  window.addEventListener("storage", listener);
-  return () => window.removeEventListener("storage", listener);
-}
-
-function readSessionRaw() {
-  return window.localStorage.getItem(STUDENT_SESSION_KEY);
-}
-
-function readServerSessionRaw() {
-  return null;
-}
-
-function parseSession(raw: string | null): StudentSession | null {
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw) as StudentSession;
-  } catch {
-    return null;
-  }
-}
-
-export function AuthGate({ children }: AuthGateProps) {
+export function AuthGate({ children }: { children: ReactNode }) {
+  const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
-  const sessionRaw = useSyncExternalStore(subscribeToSession, readSessionRaw, readServerSessionRaw);
-  const session = useMemo(() => parseSession(sessionRaw), [sessionRaw]);
+  const pathname = usePathname();
 
   useEffect(() => {
-    if (sessionRaw === null) {
-      router.replace("/login");
+    if (!isLoading && !isAuthenticated) {
+      router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
     }
-  }, [router, sessionRaw]);
+  }, [isLoading, isAuthenticated, router, pathname]);
 
-  if (!session) {
+  if (isLoading || !isAuthenticated) {
     return (
       <main className="loading-screen">
         <div className="loading-card">
@@ -53,5 +27,5 @@ export function AuthGate({ children }: AuthGateProps) {
     );
   }
 
-  return children(session);
+  return <>{children}</>;
 }
