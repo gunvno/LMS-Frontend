@@ -50,10 +50,15 @@ export default function LearnPage({
         .sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0));
       setLessons(lessonList);
       if (lessonList.length > 0) {
-        setCurrentLesson(lessonList[0]);
-        setCurrentIndex(0);
+        const firstAccessibleIndex = lessonList.findIndex((lesson) => !lesson.locked);
+        const initialIndex = firstAccessibleIndex >= 0 ? firstAccessibleIndex : 0;
+        const initialLesson = lessonList[initialIndex];
+        setCurrentLesson(initialLesson);
+        setCurrentIndex(initialIndex);
         // Start first lesson
-        learningService.startLesson(lessonList[0].id).catch(() => {});
+        if (!initialLesson.locked) {
+          learningService.startLesson(initialLesson.id).catch(() => {});
+        }
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Không tải được khóa học.");
@@ -76,6 +81,10 @@ export default function LearnPage({
   }, [currentLesson]);
 
   const selectLesson = async (lesson: Lesson, index: number) => {
+    if (lesson.locked) {
+      toast.info("Hãy hoàn thành bài học trước để mở khóa bài này.");
+      return;
+    }
     setCurrentLesson(lesson);
     setCurrentIndex(index);
     try {
@@ -90,12 +99,18 @@ export default function LearnPage({
       await learningService.completeLesson(currentLesson.id);
       setCompletedLessons((prev) => new Set(prev).add(currentLesson.id));
       toast.success(`Đã hoàn thành: ${currentLesson.title}`);
-      // Auto-move to next lesson
-      if (currentIndex < lessons.length - 1) {
-        const next = lessons[currentIndex + 1];
+      const refreshed = normalizeList<Lesson>(
+        await courseService.getLessonsByCourse(courseId)
+      ).sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0));
+      setLessons(refreshed);
+      // Auto-move to the newly unlocked next lesson.
+      if (currentIndex < refreshed.length - 1) {
+        const next = refreshed[currentIndex + 1];
         setCurrentLesson(next);
         setCurrentIndex(currentIndex + 1);
-        learningService.startLesson(next.id).catch(() => {});
+        if (!next.locked) {
+          learningService.startLesson(next.id).catch(() => {});
+        }
       }
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Không thể hoàn thành bài học.");
@@ -233,19 +248,23 @@ export default function LearnPage({
               {lessons.map((lesson, idx) => {
                 const isActive = currentLesson?.id === lesson.id;
                 const isCompleted = completedLessons.has(lesson.id);
+                const isLocked = Boolean(lesson.locked);
                 return (
                   <button
                     key={lesson.id}
-                    className={`lesson-list-item ${isActive ? "active" : ""} ${isCompleted ? "completed" : ""}`}
+                    className={`lesson-list-item ${isActive ? "active" : ""} ${isCompleted ? "completed" : ""} ${isLocked ? "locked" : ""}`}
                     onClick={() => selectLesson(lesson, idx)}
+                    disabled={isLocked}
                   >
                     <span className="lesson-list-index">
                       {isCompleted ? (
                         <CheckCircle size={18} />
+                      ) : isLocked ? (
+                        <Lock size={16} />
                       ) : isActive ? (
                         <PlayCircle size={18} />
                       ) : (
-                        <Lock size={16} />
+                        <PlayCircle size={16} />
                       )}
                     </span>
                     <div>

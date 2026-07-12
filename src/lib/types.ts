@@ -163,6 +163,7 @@ export interface Lesson {
   durationMinutes?: number;
   videoUrl?: string;
   createdAt?: string;
+  locked?: boolean;
 }
 
 export interface LessonResource {
