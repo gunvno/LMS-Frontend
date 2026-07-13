@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/components/AuthProvider";
+import { ChatWidget } from "@/components/ChatWidget";
 import { ToastProvider } from "@/components/Toast";
 import "./globals.css";
 
@@ -30,6 +31,7 @@ export default function RootLayout({
         <AuthProvider>
           <ToastProvider>
             {children}
+            <ChatWidget />
           </ToastProvider>
         </AuthProvider>
       </body>
