@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import {
   chatbotService,
+  normalizeChatDateTime,
   type ChatConversation,
   type ChatMessage,
 } from "@/services/chatbot.service";
@@ -30,7 +31,8 @@ function mergeMessage(current: ChatMessage[], incoming: ChatMessage) {
   const merged = current.some((message) => message.id === incoming.id)
     ? current.map((message) => message.id === incoming.id ? incoming : message)
     : [...current, incoming];
-  return merged.sort((left, right) => left.createdAt.localeCompare(right.createdAt));
+  return merged.sort((left, right) =>
+    normalizeChatDateTime(left.createdAt).localeCompare(normalizeChatDateTime(right.createdAt)));
 }
 
 function formatPrice(price?: number) {

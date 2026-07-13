@@ -73,8 +73,8 @@ export default function CoursesPage() {
   }, [authLoading, isAuthenticated]);
 
   useEffect(() => {
-    setPage(0);
-    fetchData(0);
+    const timeoutId = window.setTimeout(() => void fetchData(0), 0);
+    return () => window.clearTimeout(timeoutId);
   }, [fetchData]);
 
   const loadMore = () => {
@@ -115,7 +115,10 @@ export default function CoursesPage() {
         />
         <select
           value={categoryId}
-          onChange={(e) => setCategoryId(e.target.value)}
+          onChange={(e) => {
+            setPage(0);
+            setCategoryId(e.target.value);
+          }}
         >
           <option value="">Tất cả danh mục</option>
           {categories.map((cat) => (

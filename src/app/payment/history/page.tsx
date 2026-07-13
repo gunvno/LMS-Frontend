@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { Ban, CreditCard, ReceiptText } from "lucide-react";
 import { AuthGate } from "@/components/AuthGate";
+import { ActionMenu } from "@/components/ActionMenu";
 import { StudentShell } from "@/components/StudentShell";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { paymentService } from "@/services/payment.service";
-import type { Invoice } from "@/lib/types";
+import type { Payment, PaymentStatus } from "@/lib/types";
+import { formatApiDate } from "@/lib/date";
 
 function normalizeList<T>(data: unknown): T[] {
   if (Array.isArray(data)) return data as T[];
@@ -16,34 +19,64 @@ function normalizeList<T>(data: unknown): T[] {
   return [];
 }
 
-function formatPaymentDate(value?: string) {
-  if (!value) return "—";
-  const date = new Date(value);
-  if (!Number.isFinite(date.getTime())) return "—";
-  return new Intl.DateTimeFormat("vi-VN", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(date);
+const paymentStatusLabel: Record<PaymentStatus, string> = {
+  PENDING: "Chờ thanh toán",
+  PAID: "Đã thanh toán",
+  CANCELLED: "Đã hủy",
+  EXPIRED: "Đã hết hạn",
+  FAILED: "Thất bại",
+};
+
+function paymentStatusClass(status: PaymentStatus) {
+  if (status === "PAID") return "success";
+  if (status === "PENDING") return "pending";
+  return "danger";
 }
 
 export default function PaymentHistoryPage() {
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cancellingOrderCode, setCancellingOrderCode] = useState<number | null>(null);
   const [error, setError] = useState("");
+  const [actionError, setActionError] = useState("");
 
-  const loadInvoices = async () => {
+  const loadPayments = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      setInvoices(normalizeList<Invoice>(await paymentService.getMyInvoices()));
+      setPayments(normalizeList<Payment>(await paymentService.getMyPaymentHistory({
+        page: 0,
+        size: 100,
+        sort: "createdDate,desc",
+      })));
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Không tải được lịch sử thanh toán.");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  useEffect(() => { loadInvoices(); }, []);
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => void loadPayments(), 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [loadPayments]);
+
+  const cancelPayment = async (payment: Payment) => {
+    if (!payment.providerOrderCode || !window.confirm("Bạn có chắc muốn hủy giao dịch thanh toán này?")) return;
+
+    try {
+      setCancellingOrderCode(payment.providerOrderCode);
+      setActionError("");
+      const updated = await paymentService.cancelPaymentByPayosOrderCode(payment.providerOrderCode);
+      setPayments((current) => current.map((item) =>
+        item.id === updated.id || item.providerOrderCode === updated.providerOrderCode ? updated : item
+      ));
+    } catch (err: unknown) {
+      setActionError(err instanceof Error ? err.message : "Không hủy được giao dịch thanh toán.");
+    } finally {
+      setCancellingOrderCode(null);
+    }
+  };
 
   return (
     <AuthGate>
@@ -52,24 +85,45 @@ export default function PaymentHistoryPage() {
           <div>
             <span className="eyebrow">Billing</span>
             <h1>Lịch sử thanh toán</h1>
-            <p>Tra cứu các giao dịch đã thanh toán và hóa đơn của bạn.</p>
+            <p>Theo dõi toàn bộ giao dịch, bao gồm cả các thanh toán đang chờ hoàn tất.</p>
           </div>
         </section>
 
-        {loading ? <div className="loading-card">Đang tải lịch sử thanh toán...</div> : error ? <ErrorState message={error} onRetry={loadInvoices} /> : invoices.length === 0 ? (
-          <EmptyState title="Chưa có hóa đơn" description="Các hóa đơn sẽ xuất hiện sau khi bạn thanh toán khóa học." action={{ label: "Xem khóa học", href: "/courses" }} />
+        {actionError && <div className="form-error payment-history-error">{actionError}</div>}
+
+        {loading ? <div className="loading-card">Đang tải lịch sử thanh toán...</div> : error ? <ErrorState message={error} onRetry={loadPayments} /> : payments.length === 0 ? (
+          <EmptyState title="Chưa có giao dịch" description="Các giao dịch sẽ xuất hiện tại đây khi bạn bắt đầu thanh toán khóa học." action={{ label: "Xem khóa học", href: "/courses" }} />
         ) : (
           <section className="table-card payment-history-table-wrap">
             <table className="data-table payment-history-table">
-              <thead><tr><th>Mã hóa đơn</th><th>Số tiền</th><th>Nhà cung cấp</th><th>Trạng thái</th><th>Ngày thanh toán</th></tr></thead>
+              <thead><tr><th>Giao dịch</th><th>Khóa học</th><th>Số tiền</th><th>Nhà cung cấp</th><th>Trạng thái</th><th>Thời gian</th><th>Thao tác</th></tr></thead>
               <tbody>
-                {invoices.map((invoice) => (
-                  <tr key={invoice.id}>
-                    <td><strong>{invoice.invoiceCode}</strong><small>{invoice.courseId}</small></td>
-                    <td>{invoice.amount.toLocaleString("vi-VN")}đ</td>
-                    <td>{invoice.provider}</td>
-                    <td><span className="status-badge success">{invoice.status === "PAID" ? "Đã thanh toán" : invoice.status}</span></td>
-                    <td>{formatPaymentDate(invoice.paidAt || invoice.issuedAt)}</td>
+                {payments.map((payment, index) => (
+                  <tr key={payment.id || payment.providerOrderCode || `${payment.courseId}-${index}`}>
+                    <td>
+                      <strong>{payment.invoiceCode || (payment.providerOrderCode ? `#${payment.providerOrderCode}` : "—")}</strong>
+                      {payment.invoiceCode && payment.providerOrderCode && <small>Đơn #{payment.providerOrderCode}</small>}
+                    </td>
+                    <td><span className="payment-course-id">{payment.courseId}</span></td>
+                    <td><strong>{Number(payment.amount || 0).toLocaleString("vi-VN")}đ</strong></td>
+                    <td>{payment.provider || "—"}</td>
+                    <td><span className={`status-badge ${paymentStatusClass(payment.status)}`}>{paymentStatusLabel[payment.status] || payment.status}</span></td>
+                    <td>{formatApiDate(payment.paidAt || payment.displayDate || payment.createdAt || payment.createdDate, payment.providerOrderCode)}</td>
+                    <td>
+                      <ActionMenu items={[
+                        ...(payment.status === "PENDING" && payment.providerOrderCode ? [
+                          { label: "Tiếp tục thanh toán", href: `/payment/checkout?orderCode=${payment.providerOrderCode}`, icon: <CreditCard size={16} /> },
+                          {
+                            label: cancellingOrderCode === payment.providerOrderCode ? "Đang hủy..." : "Hủy thanh toán",
+                            icon: <Ban size={16} />,
+                            danger: true,
+                            disabled: cancellingOrderCode === payment.providerOrderCode,
+                            onClick: () => void cancelPayment(payment),
+                          },
+                        ] : []),
+                        ...(payment.id ? [{ label: "Xem chi tiết", href: `/payment/history/${payment.id}`, icon: <ReceiptText size={16} /> }] : []),
+                      ]} />
+                    </td>
                   </tr>
                 ))}
               </tbody>

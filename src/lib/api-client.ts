@@ -139,7 +139,9 @@ const ERROR_MESSAGES: Record<string, string> = {
   "payment.amount_invalid": "Số tiền thanh toán không hợp lệ.",
   "payment.amount_mismatch": "Số tiền thanh toán không khớp với khóa học.",
   "payment.not_found": "Không tìm thấy giao dịch thanh toán.",
+  "payment.cannot_cancel": "Chỉ có thể hủy giao dịch đang chờ thanh toán.",
   "payment.enrollment_pending": "Thanh toán đã thành công. Hệ thống đang thêm khóa học vào tài khoản của bạn.",
+  "payos.cancel_failed": "Không hủy được liên kết thanh toán PayOS. Vui lòng thử lại.",
   "must not be blank": "Vui lòng kiểm tra các trường bắt buộc.",
 };
 
@@ -155,6 +157,40 @@ export async function apiClient<T>(
   options: ApiClientOptions = {}
 ): Promise<T> {
   return executeRequest<T>(endpoint, options, true);
+}
+
+export async function apiBlob(endpoint: string): Promise<Blob> {
+  return executeBlobRequest(endpoint, true);
+}
+
+async function executeBlobRequest(endpoint: string, allowRefresh: boolean): Promise<Blob> {
+  const token = getToken();
+  const response = await fetch(`${BASE_URL}${endpoint}`, {
+    headers: {
+      "Accept-Language": "vi",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+
+  if (response.status === 401) {
+    if (allowRefresh && typeof window !== "undefined") {
+      const refreshedToken = await refreshAccessToken();
+      if (refreshedToken) return executeBlobRequest(endpoint, false);
+    }
+    clearSessionAndRedirect();
+    throw new ApiError("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.", 401);
+  }
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null);
+    throw new ApiError(
+      normalizeErrorMessage(payload?.message, `Không tải được file (${response.status})`),
+      response.status,
+      payload?.errorCode
+    );
+  }
+
+  return response.blob();
 }
 
 async function executeRequest<T>(

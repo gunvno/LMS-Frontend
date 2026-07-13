@@ -125,6 +125,7 @@ export interface CourseCategory {
   id: string;
   name: string;
   description?: string;
+  status?: "ACTIVE" | "INACTIVE";
 }
 
 export interface Course {
@@ -169,10 +170,11 @@ export interface Lesson {
 export interface LessonResource {
   id: string;
   lessonId: string;
-  name: string;
+  title: string;
   resourceType?: string;
-  resourceUrl?: string;
-  fileSize?: number;
+  filePath?: string;
+  externalUrl?: string;
+  status?: string;
 }
 
 // ── Enrollment / Learning ─────────────────────────────────

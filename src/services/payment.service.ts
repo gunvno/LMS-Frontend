@@ -31,4 +31,7 @@ export const paymentService = {
 
   syncPaymentByPayosOrderCode: (orderCode: string | number) =>
     api.post<Payment>(`/billing/api/v1/payments/orders/${orderCode}/sync`),
+
+  cancelPaymentByPayosOrderCode: (orderCode: string | number) =>
+    api.post<Payment>(`/billing/api/v1/payments/orders/${orderCode}/cancel`),
 };

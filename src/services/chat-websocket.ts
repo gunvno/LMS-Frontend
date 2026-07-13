@@ -1,5 +1,9 @@
 import { Client, type IMessage, type StompSubscription } from "@stomp/stompjs";
-import type { ChatMessage } from "@/services/chatbot.service";
+import {
+  normalizeChatDateTime,
+  normalizeChatMessage,
+  type ChatMessage,
+} from "@/services/chatbot.service";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_GATEWAY_URL || "http://localhost:8080";
 
@@ -66,7 +70,13 @@ export function connectChatWebSocket({
 function handleMessage(message: IMessage, onEvent: (event: ChatRealtimeEvent) => void) {
   try {
     const event = JSON.parse(message.body) as ChatRealtimeEvent;
-    if (event?.eventType && event.conversationId) onEvent(event);
+    if (event?.eventType && event.conversationId) {
+      onEvent({
+        ...event,
+        occurredAt: normalizeChatDateTime(event.occurredAt),
+        message: event.message ? normalizeChatMessage(event.message) : undefined,
+      });
+    }
   } catch {
     // Ignore malformed frames and keep the connection alive.
   }

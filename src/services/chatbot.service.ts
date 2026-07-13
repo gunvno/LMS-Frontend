@@ -31,6 +31,46 @@ export interface ChatMessage {
   createdAt: string;
 }
 
+export function normalizeChatDateTime(value: unknown): string {
+  if (typeof value === "string") return value;
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return new Date(value).toISOString();
+  }
+
+  if (Array.isArray(value) && value.length >= 3) {
+    const parts = value.map(Number);
+    if (parts.every(Number.isFinite)) {
+      const [year, month, day, hour = 0, minute = 0, second = 0, nanosecond = 0] = parts;
+      const pad = (part: number, length = 2) => String(Math.trunc(part)).padStart(length, "0");
+      const milliseconds = Math.trunc(nanosecond / 1_000_000);
+      return `${pad(year, 4)}-${pad(month)}-${pad(day)}T${pad(hour)}:${pad(minute)}:${pad(second)}.${pad(milliseconds, 3)}`;
+    }
+  }
+
+  return "";
+}
+
+export function normalizeChatMessage(message: ChatMessage): ChatMessage {
+  return {
+    ...message,
+    recommendedCourses: Array.isArray(message.recommendedCourses)
+      ? message.recommendedCourses
+      : [],
+    createdAt: normalizeChatDateTime(message.createdAt),
+  };
+}
+
+function normalizeChatConversation(conversation: ChatConversation): ChatConversation {
+  return {
+    ...conversation,
+    createdAt: normalizeChatDateTime(conversation.createdAt),
+    lastMessageAt: conversation.lastMessageAt
+      ? normalizeChatDateTime(conversation.lastMessageAt)
+      : undefined,
+  };
+}
+
 type ApiEnvelope<T> = {
   data?: T;
   errorCode?: string;
@@ -59,7 +99,8 @@ const conversationsPath = "/chat/api/v1/chat/conversations";
 
 export const chatbotService = {
   createConversation() {
-    return chatRequest<ChatConversation>(conversationsPath, { method: "POST" });
+    return chatRequest<ChatConversation>(conversationsPath, { method: "POST" })
+      .then(normalizeChatConversation);
   },
 
   getConversation(conversationId: string, accessToken: string) {
@@ -67,7 +108,7 @@ export const chatbotService = {
       `${conversationsPath}/${conversationId}`,
       {},
       accessToken,
-    );
+    ).then(normalizeChatConversation);
   },
 
   getMessages(conversationId: string, accessToken: string) {
@@ -75,7 +116,7 @@ export const chatbotService = {
       `${conversationsPath}/${conversationId}/messages`,
       {},
       accessToken,
-    );
+    ).then((messages) => messages.map(normalizeChatMessage));
   },
 
   sendMessage(conversationId: string, accessToken: string, content: string) {
@@ -83,6 +124,6 @@ export const chatbotService = {
       `${conversationsPath}/${conversationId}/messages`,
       { method: "POST", body: JSON.stringify({ content }) },
       accessToken,
-    );
+    ).then(normalizeChatMessage);
   },
 };

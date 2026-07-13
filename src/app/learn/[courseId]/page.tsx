@@ -9,8 +9,8 @@ import { useToast } from "@/components/Toast";
 import { courseService } from "@/services/course.service";
 import { learningService } from "@/services/learning.service";
 import { quizService } from "@/services/quiz.service";
-import type { Course, Lesson, Quiz } from "@/lib/types";
-import { CheckCircle, PlayCircle, Lock, ChevronLeft, ChevronRight, ListChecks } from "lucide-react";
+import type { Course, Lesson, LessonResource, Quiz } from "@/lib/types";
+import { CheckCircle, PlayCircle, Lock, ChevronLeft, ChevronRight, Download, ExternalLink, FileText, ListChecks } from "lucide-react";
 
 function normalizeList<T>(data: unknown): T[] {
   if (Array.isArray(data)) return data as T[];
@@ -32,6 +32,9 @@ export default function LearnPage({
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [resources, setResources] = useState<LessonResource[]>([]);
+  const [videoSource, setVideoSource] = useState("");
+  const [videoLoading, setVideoLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [completing, setCompleting] = useState(false);
@@ -68,7 +71,10 @@ export default function LearnPage({
   }, [courseId]);
 
   useEffect(() => {
-    fetchData();
+    const timeoutId = window.setTimeout(() => {
+      void fetchData();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [fetchData]);
 
   // Load quizzes for current lesson
@@ -77,8 +83,65 @@ export default function LearnPage({
       quizService.getQuizzes({ lessonId: currentLesson.id })
         .then((data) => setQuizzes(normalizeList<Quiz>(data)))
         .catch(() => setQuizzes([]));
+      courseService.getLessonResources({ lessonId: currentLesson.id, page: 0, size: 100 })
+        .then((data) => setResources(normalizeList<LessonResource>(data)))
+        .catch(() => setResources([]));
     }
   }, [currentLesson]);
+
+  useEffect(() => {
+    let active = true;
+    let objectUrl = "";
+
+    const loadVideo = async () => {
+      const source = currentLesson?.videoUrl;
+      if (!source) {
+        setVideoSource("");
+        return;
+      }
+      if (!source.startsWith("/course/api/")) {
+        setVideoSource(source);
+        return;
+      }
+
+      const resourceId = source.match(/lesson-resources\/([^/]+)\/view/)?.[1];
+      if (!resourceId) {
+        setVideoSource("");
+        return;
+      }
+
+      try {
+        setVideoLoading(true);
+        const blob = await courseService.viewLessonResource(resourceId);
+        objectUrl = URL.createObjectURL(blob);
+        if (active) setVideoSource(objectUrl);
+      } catch {
+        if (active) setVideoSource("");
+      } finally {
+        if (active) setVideoLoading(false);
+      }
+    };
+
+    void loadVideo();
+    return () => {
+      active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [currentLesson]);
+
+  const downloadResource = async (resource: LessonResource) => {
+    try {
+      const blob = await courseService.downloadLessonResource(resource.id);
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = resource.title || "tai-lieu";
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Không tải được tài liệu.");
+    }
+  };
 
   const selectLesson = async (lesson: Lesson, index: number) => {
     if (lesson.locked) {
@@ -160,13 +223,15 @@ export default function LearnPage({
             {currentLesson ? (
               <>
                 <div className="lesson-player">
-                  {currentLesson.videoUrl ? (
+                  {videoLoading ? (
+                    <div style={{ display: "grid", placeItems: "center", width: "100%", height: "100%" }}>Đang tải video...</div>
+                  ) : videoSource ? (
                     <video
                       key={currentLesson.id}
                       controls
                       style={{ width: "100%", height: "100%", objectFit: "contain" }}
                     >
-                      <source src={currentLesson.videoUrl} />
+                      <source src={videoSource} />
                     </video>
                   ) : (
                     <>
@@ -191,6 +256,22 @@ export default function LearnPage({
                   )}
                   {currentLesson.description && !currentLesson.content && (
                     <p>{currentLesson.description}</p>
+                  )}
+
+                  {resources.some((resource) => resource.resourceType !== "VIDEO") && (
+                    <div className="quiz-reminder" style={{ marginTop: 18 }}>
+                      <strong><FileText size={16} style={{ marginRight: 4 }} /> Tài liệu bài học</strong>
+                      {resources.filter((resource) => resource.resourceType !== "VIDEO").map((resource) => (
+                        <div key={resource.id} style={{ marginTop: 8, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                          <span>{resource.title}</span>
+                          {resource.externalUrl ? (
+                            <a href={resource.externalUrl} target="_blank" rel="noreferrer" className="ghost-button"><ExternalLink size={15} /> Mở</a>
+                          ) : (
+                            <button type="button" className="ghost-button" onClick={() => void downloadResource(resource)}><Download size={15} /> Tải xuống</button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   )}
 
                   {quizzes.length > 0 && (

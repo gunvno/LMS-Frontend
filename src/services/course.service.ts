@@ -2,7 +2,7 @@
    LMS Mini — Course Service
    ────────────────────────────────────────────────────────── */
 
-import { api, toQuery } from "@/lib/api-client";
+import { api, apiBlob, toQuery } from "@/lib/api-client";
 import type {
   Course,
   CourseCategory,
@@ -21,13 +21,13 @@ export const courseService = {
   /** Lấy danh mục khóa học */
   getCategories: (params: Record<string, unknown> = {}) =>
     api.get<PageData<CourseCategory> | CourseCategory[]>(
-      `/course/api/v1/course-categories${params ? `?${toQuery(params)}` : ""}`
+      `/course/api/v1/course-categories/catalog${Object.keys(params).length > 0 ? `?${toQuery(params)}` : ""}`
     ),
 
   /** Lấy danh sách khóa học */
   getCourses: (params: Record<string, unknown> = {}) =>
     api.get<PageData<Course>>(
-      `/course/api/v1/courses?${toQuery({ page: 0, size: 12, ...params })}`
+      `/course/api/v1/courses/published?${toQuery({ page: 0, size: 12, ...params })}`
     ),
 
   /** Chi tiết khóa học */
@@ -65,4 +65,12 @@ export const courseService = {
   /** Chi tiết tài nguyên */
   getLessonResource: (id: string) =>
     api.get<LessonResource>(`/course/api/v1/lesson-resources/${id}`),
+
+  /** Tải nội dung tài nguyên có gắn access token */
+  viewLessonResource: (id: string) =>
+    apiBlob(`/course/api/v1/lesson-resources/${id}/view`),
+
+  /** Tải file tài nguyên có gắn access token */
+  downloadLessonResource: (id: string) =>
+    apiBlob(`/course/api/v1/lesson-resources/${id}/download`),
 };
