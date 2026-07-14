@@ -294,7 +294,7 @@ export function ChatWidget() {
         </section>
       )}
 
-      <button type="button" className={styles.launcher} onClick={() => setIsOpen((open) => !open)} aria-label={isOpen ? "Đóng trợ lý AI" : "Mở trợ lý AI"} aria-expanded={isOpen}>
+      <button type="button" className={styles.launcher} onClick={() => setIsOpen((open) => !open)} aria-label={isOpen ? "Đóng trợ lý AI" : "Mở trợ lý AI"} title="Trợ lý AI" aria-expanded={isOpen}>
         {isOpen ? <X size={24} /> : <MessageCircle size={25} />}
       </button>
     </aside>

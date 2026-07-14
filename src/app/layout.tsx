@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/components/AuthProvider";
 import { ChatWidget } from "@/components/ChatWidget";
+import { InstructorChatLauncher } from "@/components/InstructorChatLauncher";
 import { ToastProvider } from "@/components/Toast";
 import { ConfirmationProvider } from "@/components/ConfirmationModal";
 import "./globals.css";
@@ -33,6 +34,7 @@ export default function RootLayout({
           <ToastProvider>
             <ConfirmationProvider>
               {children}
+              <InstructorChatLauncher />
               <ChatWidget />
             </ConfirmationProvider>
           </ToastProvider>

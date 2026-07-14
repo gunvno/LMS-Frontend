@@ -1,0 +1,40 @@
+.launcher {
+  position: fixed;
+  right: 94px;
+  bottom: 27px;
+  z-index: 59;
+  min-height: 52px;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 17px;
+  border: 1px solid #bbf7d0;
+  border-radius: 17px;
+  color: #065f46;
+  background: #ecfdf3;
+  box-shadow: 0 16px 38px rgba(6, 95, 70, 0.2);
+  font-weight: 800;
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.launcher:hover {
+  transform: translateY(-2px);
+  background: #dcfce7;
+  box-shadow: 0 20px 44px rgba(6, 95, 70, 0.25);
+}
+
+.launcher:focus-visible {
+  outline: 3px solid rgba(16, 185, 129, 0.25);
+  outline-offset: 3px;
+}
+
+@media (max-width: 520px) {
+  .launcher {
+    right: 12px;
+    bottom: 78px;
+    min-height: 46px;
+    padding: 0 13px;
+    border-radius: 15px;
+    font-size: 13px;
+  }
+}

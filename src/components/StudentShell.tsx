@@ -17,12 +17,14 @@ import {
   FolderOpen,
   ChevronDown,
   ReceiptText,
+  MessagesSquare,
 } from "lucide-react";
 
 const navItems = [
   { href: "/dashboard", label: "Tổng quan", icon: LayoutDashboard },
   { href: "/courses", label: "Khóa học", icon: BookOpen },
   { href: "/my-courses", label: "Khóa của tôi", icon: FolderOpen },
+  { href: "/messages", label: "Giảng viên", icon: MessagesSquare },
   { href: "/quiz", label: "Quiz", icon: ListChecks },
 ];
 
