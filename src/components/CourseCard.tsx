@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element -- Course images are served by the LMS API. */
 
 import Link from "next/link";
 import { ProgressBar } from "./ProgressBar";

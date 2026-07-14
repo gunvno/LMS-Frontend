@@ -66,9 +66,12 @@ export function StudentShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!user) return;
     const syncNotices = () => void loadNotices();
-    void loadNotices();
+    const timer = window.setTimeout(syncNotices, 0);
     window.addEventListener("lms:notifications-updated", syncNotices);
-    return () => window.removeEventListener("lms:notifications-updated", syncNotices);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("lms:notifications-updated", syncNotices);
+    };
   }, [user]);
 
   const handleMarkRead = async (notice: Notice) => {

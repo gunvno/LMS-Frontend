@@ -55,7 +55,7 @@ export default function QuizAttemptPage({
           return {
             ...q,
             // ⚠️ Strip `correct` field for security
-            answers: answers.map(({ correct, ...rest }) => ({ ...rest, correct: undefined })) as Answer[],
+            answers: answers.map((answer) => ({ ...answer, correct: undefined })),
           };
         })
       );
@@ -69,7 +69,8 @@ export default function QuizAttemptPage({
   }, [quizId]);
 
   useEffect(() => {
-    fetchData();
+    const timer = window.setTimeout(() => void fetchData(), 0);
+    return () => window.clearTimeout(timer);
   }, [fetchData]);
 
   const startAttempt = async () => {
@@ -151,7 +152,7 @@ export default function QuizAttemptPage({
               {result.score != null && (
                 <div className="result-score">
                   <strong>{result.score}</strong>
-                  <span>điểm</span>
+                  <span>%</span>
                 </div>
               )}
               {result.correctAnswers != null && result.totalQuestions != null && (
@@ -199,7 +200,7 @@ export default function QuizAttemptPage({
                 <>
                   <p style={{ color: "var(--muted)", marginBottom: 20 }}>
                     Bấm bắt đầu khi bạn đã sẵn sàng.
-                    {quiz?.passingScore != null && ` Điểm đạt: ${quiz.passingScore}.`}
+                    {quiz?.passScore != null && ` Điểm đạt: ${quiz.passScore}%.`}
                   </p>
                   <button className="primary-button large" onClick={startAttempt}>
                     Bắt đầu quiz

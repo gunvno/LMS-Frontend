@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element -- Lesson media can be authenticated or blob-backed. */
 
 import { use, useCallback, useEffect, useState } from "react";
 import Link from "next/link";

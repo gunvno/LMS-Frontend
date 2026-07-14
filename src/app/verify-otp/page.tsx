@@ -17,7 +17,7 @@ function OtpForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(60);
-  const [canResend, setCanResend] = useState(false);
+  const canResend = countdown <= 0;
   const [sendMessage, setSendMessage] = useState(
     shouldSend ? "Đang gửi mã OTP tới email của bạn..." : "Mã OTP có hiệu lực trong 5 phút."
   );
@@ -34,24 +34,19 @@ function OtpForm() {
       .catch((err: unknown) => {
         setSendMessage("");
         setError(err instanceof Error ? err.message : "Không gửi được OTP. Vui lòng thử lại.");
-        setCanResend(true);
         setCountdown(0);
       });
   }, [email, router, shouldSend]);
 
   // Countdown timer
   useEffect(() => {
-    if (countdown <= 0) {
-      setCanResend(true);
-      return;
-    }
+    if (countdown <= 0) return;
     const timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
     return () => clearTimeout(timer);
   }, [countdown]);
 
   const resendOtp = useCallback(async () => {
     if (!canResend || !email) return;
-    setCanResend(false);
     setCountdown(60);
     setError("");
     setSendMessage("Đang gửi lại mã OTP...");
@@ -61,7 +56,6 @@ function OtpForm() {
     } catch (err: unknown) {
       setSendMessage("");
       setError(err instanceof Error ? err.message : "Không gửi được OTP. Vui lòng thử lại.");
-      setCanResend(true);
       setCountdown(0);
     }
   }, [canResend, email]);

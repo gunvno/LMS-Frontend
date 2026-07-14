@@ -47,7 +47,8 @@ export default function CertificatesPage() {
   };
 
   useEffect(() => {
-    fetchData();
+    const timer = window.setTimeout(() => void fetchData(), 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const verifyCertificate = async () => {

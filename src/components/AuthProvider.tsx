@@ -163,18 +163,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // On mount: restore from localStorage, then refresh from API
   useEffect(() => {
-    const token = getAccessToken();
-    if (token) {
-      // Instant restore from storage
-      const storedUser = getStoredUser();
-      if (storedUser) setUser(storedUser);
-      setRoles(getStoredRoles());
-      setPermissions(getStoredPermissions());
-      // Background refresh
-      refreshUser().finally(() => setIsLoading(false));
-    } else {
-      setIsLoading(false);
-    }
+    const timer = window.setTimeout(() => {
+      const token = getAccessToken();
+      if (token) {
+        const storedUser = getStoredUser();
+        if (storedUser) setUser(storedUser);
+        setRoles(getStoredRoles());
+        setPermissions(getStoredPermissions());
+        void refreshUser().finally(() => setIsLoading(false));
+      } else {
+        setIsLoading(false);
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [refreshUser]);
 
   return (

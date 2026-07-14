@@ -280,7 +280,7 @@ export interface Quiz {
   description?: string;
   durationMinutes?: number;
   requiredToComplete?: boolean;
-  passingScore?: number;
+  passScore?: number;
   maxAttempts?: number;
   questionCount?: number;
 }

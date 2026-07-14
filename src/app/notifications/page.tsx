@@ -51,7 +51,8 @@ export default function NotificationsPage() {
   }, [page]);
 
   useEffect(() => {
-    void loadNotices();
+    const timer = window.setTimeout(() => void loadNotices(), 0);
+    return () => window.clearTimeout(timer);
   }, [loadNotices]);
 
   const markRead = async (notice: Notice) => {

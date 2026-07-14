@@ -49,7 +49,8 @@ export default function QuizListPage() {
   };
 
   useEffect(() => {
-    fetchData();
+    const timer = window.setTimeout(() => void fetchData(), 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   return (
@@ -89,7 +90,7 @@ export default function QuizListPage() {
                 <div className="quiz-meta">
                   {quiz.questionCount != null && <span>{quiz.questionCount} câu hỏi</span>}
                   {quiz.durationMinutes != null && <span>{quiz.durationMinutes} phút</span>}
-                  {quiz.passingScore != null && <span>Điểm đạt: {quiz.passingScore}</span>}
+                  {quiz.passScore != null && <span>Điểm đạt: {quiz.passScore}%</span>}
                 </div>
                 <Link className="primary-button full-button" href={`/quiz/${quiz.id}`}>
                   Bắt đầu

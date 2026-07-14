@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element -- Course images are served by the authenticated LMS API. */
 
 import { use, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
@@ -70,7 +71,8 @@ export default function CourseDetailPage({
   }, [authLoading, isAuthenticated, courseId]);
 
   useEffect(() => {
-    fetchData();
+    const timer = window.setTimeout(() => void fetchData(), 0);
+    return () => window.clearTimeout(timer);
   }, [fetchData]);
 
   const handleEnroll = async () => {

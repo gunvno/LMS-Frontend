@@ -59,7 +59,8 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    fetchData();
+    const timer = window.setTimeout(() => void fetchData(), 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const activeEnrollments = enrollments.filter((e) => e.status === "ACTIVE");

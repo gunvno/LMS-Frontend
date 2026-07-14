@@ -86,12 +86,8 @@ export default function MessagesPage() {
   }, []);
 
   useEffect(() => {
-    if (!selectedId) {
-      setMessages([]);
-      return;
-    }
+    if (!selectedId) return;
     let alive = true;
-    setError("");
     supportChatService.getMessages(selectedId)
       .then((items) => alive && setMessages(items || []))
       .catch((err) => alive && setError(err instanceof Error ? err.message : "Không tải được hội thoại."));
@@ -121,6 +117,8 @@ export default function MessagesPage() {
       setError("");
       const conversation = await supportChatService.createForCourse(newCourseId);
       await loadConversations();
+      setMessages([]);
+      setError("");
       setSelectedId(conversation.id);
       setNewCourseId("");
     } catch (err) {
@@ -171,7 +169,7 @@ export default function MessagesPage() {
               {loading && <p className="support-chat-empty">Đang tải...</p>}
               {!loading && conversations.length === 0 && <p className="support-chat-empty">Chọn một khóa học để bắt đầu trao đổi.</p>}
               {conversations.map((conversation) => (
-                <button key={conversation.id} type="button" className={conversation.id === selectedId ? "active" : ""} onClick={() => setSelectedId(conversation.id)}>
+                <button key={conversation.id} type="button" className={conversation.id === selectedId ? "active" : ""} onClick={() => { setMessages([]); setError(""); setSelectedId(conversation.id); }}>
                   <span className="support-chat-avatar">{conversation.instructorName.charAt(0).toUpperCase()}</span>
                   <span><strong>{conversation.instructorName}</strong><small>{conversation.courseName}</small><em>{conversation.lastMessage || "Chưa có tin nhắn"}</em></span>
                   {conversation.unreadCount > 0 && <b>{conversation.unreadCount}</b>}
