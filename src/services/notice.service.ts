@@ -31,8 +31,8 @@ export const noticeService = {
     return api.get<number>("/notice/api/v1/notices/me/unread-count");
   },
 
-  markRead(recipientId: string): Promise<Notice> {
-    return api.post<Notice>(`/notice/api/v1/notices/${recipientId}/read`);
+  markRead(recipientId: string): Promise<void> {
+    return api.post<void>(`/notice/api/v1/notices/${recipientId}/read`);
   },
 
   markAllRead(): Promise<void> {

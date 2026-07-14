@@ -18,6 +18,7 @@ import {
   ChevronDown,
   ReceiptText,
   MessagesSquare,
+  ArrowRight,
 } from "lucide-react";
 
 const navItems = [
@@ -63,17 +64,21 @@ export function StudentShell({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    if (user) {
-      loadNotices();
-    }
+    if (!user) return;
+    const syncNotices = () => void loadNotices();
+    void loadNotices();
+    window.addEventListener("lms:notifications-updated", syncNotices);
+    return () => window.removeEventListener("lms:notifications-updated", syncNotices);
   }, [user]);
 
   const handleMarkRead = async (notice: Notice) => {
     if (notice.readStatus === "READ") return;
     try {
-      const updated = await noticeService.markRead(notice.recipientId);
+      await noticeService.markRead(notice.recipientId);
       setNotices((prev) =>
-        prev.map((item) => item.recipientId === notice.recipientId ? updated : item)
+        prev.map((item) => item.recipientId === notice.recipientId
+          ? { ...item, readStatus: "READ", readAt: new Date().toISOString() }
+          : item)
       );
       setUnreadCount((count) => Math.max(0, count - 1));
     } catch (err) {
@@ -173,6 +178,10 @@ export function StudentShell({ children }: { children: React.ReactNode }) {
                   </span>
                 </button>
               ))}
+              <Link className="notification-view-all" href="/notifications">
+                Xem tất cả thông báo
+                <ArrowRight size={15} />
+              </Link>
             </div>
           </details>
           <details className="account-menu">

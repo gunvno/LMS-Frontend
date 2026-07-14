@@ -628,6 +628,35 @@ input:focus, select:focus, textarea:focus {
   background: #fff1f3;
   color: var(--danger);
 }
+.notification-dropdown > .notification-view-all {
+  width: 100%;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 2px;
+  padding: 10px 14px;
+  border: 1px solid var(--primary);
+  border-radius: 12px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 18px;
+  box-shadow: 0 8px 18px rgba(23, 92, 211, 0.18);
+  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+.notification-dropdown > .notification-view-all:hover {
+  border-color: var(--primary-dark);
+  background: var(--primary-dark);
+  color: #fff;
+  transform: translateY(-1px);
+}
+.notification-dropdown > .notification-view-all:focus-visible {
+  outline: 3px solid rgba(23, 92, 211, 0.2);
+  outline-offset: 2px;
+}
 .dashboard-hero, .page-heading {
   display: flex;
   justify-content: space-between;
