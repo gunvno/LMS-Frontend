@@ -16,11 +16,11 @@ export const paymentService = {
     ),
 
   getMyInvoice: (invoiceCode: string) =>
-    api.get<Invoice>(`/invoice/api/v1/invoices/${invoiceCode}`),
+    api.get<Invoice>(`/billing/api/v1/invoices/${invoiceCode}`),
 
   getMyInvoices: (params: Record<string, unknown> = {}) =>
     api.get<PageData<Invoice> | Invoice[]>(
-      `/invoice/api/v1/invoices/me?${toQuery({ page: 0, size: 20, ...params })}`
+      `/billing/api/v1/invoices/me?${toQuery({ page: 0, size: 20, ...params })}`
     ),
 
   getPayment: (id: string) =>
