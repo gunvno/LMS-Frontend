@@ -35,6 +35,7 @@ export default function LearnPage({
   const [resources, setResources] = useState<LessonResource[]>([]);
   const [videoSource, setVideoSource] = useState("");
   const [videoLoading, setVideoLoading] = useState(false);
+  const [videoError, setVideoError] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [completing, setCompleting] = useState(false);
@@ -104,31 +105,46 @@ export default function LearnPage({
   useEffect(() => {
     let active = true;
     let objectUrl = "";
+    const controller = new AbortController();
 
     const loadVideo = async () => {
       const source = currentLesson?.videoUrl;
+      setVideoSource("");
+      setVideoError("");
       if (!source) {
-        setVideoSource("");
+        setVideoLoading(false);
         return;
       }
       if (!source.startsWith("/course/api/")) {
         setVideoSource(source);
+        setVideoLoading(false);
         return;
       }
 
       const resourceId = source.match(/lesson-resources\/([^/]+)\/view/)?.[1];
       if (!resourceId) {
-        setVideoSource("");
+        setVideoError("Đường dẫn video không hợp lệ.");
+        setVideoLoading(false);
         return;
       }
 
       try {
         setVideoLoading(true);
-        const blob = await courseService.viewLessonResource(resourceId);
+        const blob = await courseService.viewLessonResource(resourceId, controller.signal);
+        if (!active || controller.signal.aborted) return;
+        if (blob.size === 0) {
+          throw new Error("File video không có dữ liệu.");
+        }
         objectUrl = URL.createObjectURL(blob);
-        if (active) setVideoSource(objectUrl);
-      } catch {
-        if (active) setVideoSource("");
+        setVideoSource(objectUrl);
+      } catch (videoLoadError) {
+        if (!active || controller.signal.aborted || (videoLoadError instanceof DOMException && videoLoadError.name === "AbortError")) {
+          return;
+        }
+        setVideoSource("");
+        setVideoError(videoLoadError instanceof Error
+          ? videoLoadError.message
+          : "Không tải được video bài học.");
       } finally {
         if (active) setVideoLoading(false);
       }
@@ -137,9 +153,12 @@ export default function LearnPage({
     void loadVideo();
     return () => {
       active = false;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      controller.abort();
+      if (objectUrl) {
+        window.setTimeout(() => URL.revokeObjectURL(objectUrl), 500);
+      }
     };
-  }, [currentLesson]);
+  }, [currentLesson?.videoUrl]);
 
   const downloadResource = async (resource: LessonResource) => {
     try {
@@ -149,7 +168,7 @@ export default function LearnPage({
       anchor.href = url;
       anchor.download = resource.title || "tai-lieu";
       anchor.click();
-      URL.revokeObjectURL(url);
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Không tải được tài liệu.");
     }
@@ -251,12 +270,24 @@ export default function LearnPage({
                     <div style={{ display: "grid", placeItems: "center", width: "100%", height: "100%" }}>Đang tải video...</div>
                   ) : videoSource ? (
                     <video
-                      key={currentLesson.id}
+                      key={videoSource}
+                      src={videoSource}
                       controls
+                      playsInline
+                      preload="metadata"
+                      onCanPlay={() => setVideoError("")}
+                      onError={(event) => {
+                        const mediaError = event.currentTarget.error;
+                        setVideoError(mediaError?.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED
+                          ? "Trình duyệt không hỗ trợ định dạng hoặc codec của video này. Hãy dùng MP4 (H.264) hoặc WebM."
+                          : "Không thể phát video. Vui lòng tải lại hoặc kiểm tra file video.");
+                      }}
                       style={{ width: "100%", height: "100%", objectFit: "contain" }}
-                    >
-                      <source src={videoSource} />
-                    </video>
+                    />
+                  ) : videoError ? (
+                    <div style={{ display: "grid", placeItems: "center", width: "100%", height: "100%", padding: 24, textAlign: "center", color: "var(--danger)" }}>
+                      {videoError}
+                    </div>
                   ) : (
                     <>
                       <img

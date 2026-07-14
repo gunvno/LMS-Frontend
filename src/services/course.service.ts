@@ -67,8 +67,8 @@ export const courseService = {
     api.get<LessonResource>(`/course/api/v1/lesson-resources/${id}`),
 
   /** Tải nội dung tài nguyên có gắn access token */
-  viewLessonResource: (id: string) =>
-    apiBlob(`/course/api/v1/lesson-resources/${id}/view`),
+  viewLessonResource: (id: string, signal?: AbortSignal) =>
+    apiBlob(`/course/api/v1/lesson-resources/${id}/view`, { signal }),
 
   /** Tải file tài nguyên có gắn access token */
   downloadLessonResource: (id: string) =>

@@ -159,23 +159,29 @@ export async function apiClient<T>(
   return executeRequest<T>(endpoint, options, true);
 }
 
-export async function apiBlob(endpoint: string): Promise<Blob> {
-  return executeBlobRequest(endpoint, true);
+export async function apiBlob(endpoint: string, options: RequestInit = {}): Promise<Blob> {
+  return executeBlobRequest(endpoint, options, true);
 }
 
-async function executeBlobRequest(endpoint: string, allowRefresh: boolean): Promise<Blob> {
+async function executeBlobRequest(
+  endpoint: string,
+  options: RequestInit,
+  allowRefresh: boolean
+): Promise<Blob> {
   const token = getToken();
+  const headers = new Headers(options.headers);
+  headers.set("Accept-Language", "vi");
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+
   const response = await fetch(`${BASE_URL}${endpoint}`, {
-    headers: {
-      "Accept-Language": "vi",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    ...options,
+    headers,
   });
 
   if (response.status === 401) {
     if (allowRefresh && typeof window !== "undefined") {
       const refreshedToken = await refreshAccessToken();
-      if (refreshedToken) return executeBlobRequest(endpoint, false);
+      if (refreshedToken) return executeBlobRequest(endpoint, options, false);
     }
     clearSessionAndRedirect();
     throw new ApiError("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.", 401);
