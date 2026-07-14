@@ -1002,7 +1002,9 @@ input:focus, select:focus, textarea:focus {
 .payment-transfer-row strong { margin-left: auto; }
 .copy-button { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); color: var(--primary); background: var(--surface); border-radius: 8px; padding: 7px 10px; font-weight: 700; cursor: pointer; }
 .copy-button:disabled { opacity: .55; cursor: not-allowed; }
-.payment-open-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.payment-cancel-button { width: 100%; min-height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; margin-top: 2px; border: 1px solid color-mix(in srgb, var(--danger) 32%, var(--line)); border-radius: 999px; color: var(--danger); background: color-mix(in srgb, var(--danger) 5%, white); font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }
+.payment-cancel-button:hover:not(:disabled) { background: color-mix(in srgb, var(--danger) 10%, white); }
+.payment-cancel-button:disabled { opacity: .6; cursor: not-allowed; }
 .payment-details-card .text-link { margin-top: 4px; }
 .payment-history-table-wrap { overflow-x: auto; }
 .payment-history-table { width: 100%; min-width: 960px; border-collapse: collapse; }
@@ -1025,9 +1027,33 @@ input:focus, select:focus, textarea:focus {
 .student-action-menu-item:disabled, .student-action-menu-item[aria-disabled="true"] { opacity: .5; pointer-events: none; }
 .payment-detail-heading { align-items: flex-end; }
 .payment-back-link { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 14px; }
-.payment-detail-layout { display: grid; grid-template-columns: minmax(240px, .65fr) minmax(0, 1.35fr); gap: 20px; align-items: start; }
-.payment-detail-summary { display: flex; flex-direction: column; gap: 16px; }
-.payment-detail-total { color: var(--primary); font-size: clamp(30px, 5vw, 44px); line-height: 1.1; overflow-wrap: anywhere; }
+.payment-detail-layout { display: grid; grid-template-columns: minmax(280px, .72fr) minmax(0, 1.28fr); gap: 22px; align-items: start; }
+.payment-detail-sidebar { display: grid; gap: 14px; position: sticky; top: 92px; }
+.payment-detail-total { color: var(--primary); font-size: clamp(32px, 5vw, 46px); line-height: 1.05; letter-spacing: -1.5px; overflow-wrap: anywhere; }
+.payment-receipt-summary { position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 14px; padding: 26px; border-color: color-mix(in srgb, var(--primary) 16%, var(--line)); background: linear-gradient(145deg, color-mix(in srgb, var(--primary) 7%, white), var(--surface) 62%); }
+.payment-receipt-summary::after { content: ""; position: absolute; width: 150px; height: 150px; top: -70px; right: -60px; border-radius: 50%; background: color-mix(in srgb, var(--primary) 8%, transparent); pointer-events: none; }
+.payment-receipt-icon { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 15px; color: #fff; background: linear-gradient(145deg, var(--primary), var(--primary-dark)); box-shadow: 0 10px 24px color-mix(in srgb, var(--primary) 28%, transparent); }
+.payment-receipt-divider { border-top: 1px dashed color-mix(in srgb, var(--primary) 25%, var(--line)); }
+.payment-status-line { display: flex; align-items: flex-start; gap: 11px; }
+.payment-status-line > div { display: grid; gap: 3px; }
+.payment-status-line strong { font-size: 14px; }
+.payment-status-line span { color: var(--muted); font-size: 13px; line-height: 1.45; }
+.payment-receipt-summary.success .payment-status-line { color: var(--success); }
+.payment-receipt-summary.pending .payment-status-line { color: #b45309; }
+.payment-receipt-summary.danger .payment-status-line { color: var(--danger); }
+.payment-receipt-summary .primary-button { gap: 8px; margin-top: 2px; }
+.payment-safe-note { display: flex; align-items: flex-start; gap: 9px; padding: 0 8px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.payment-safe-note svg { flex: 0 0 auto; color: var(--success); }
+.payment-detail-section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
+.payment-detail-section-heading h2 { margin: 5px 0 0; font-size: 21px; }
+.payment-invoice-chip { max-width: 210px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 7px 10px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); background: var(--surface-soft); font-size: 12px; font-weight: 800; }
+.payment-course-block { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 13px; margin: 20px 0 8px; padding: 16px; border-radius: 14px; background: var(--surface-soft); }
+.payment-course-icon { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 12px; color: var(--primary); background: var(--surface); box-shadow: 0 4px 14px rgba(15, 23, 42, .06); }
+.payment-course-block > div:nth-child(2) { min-width: 0; display: grid; gap: 3px; }
+.payment-course-block span, .payment-course-block small { color: var(--muted); font-size: 12px; }
+.payment-course-block strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.payment-course-block a { color: var(--primary); font-size: 13px; font-weight: 800; white-space: nowrap; }
+.payment-detail-list { padding-top: 4px; }
 .payment-detail-card .payment-detail-row:first-child { padding-top: 0; }
 .payment-detail-card .payment-detail-row:last-child { padding-bottom: 0; border-bottom: 0; }
 .payment-detail-card .payment-detail-row span { display: inline-flex; align-items: center; gap: 7px; }
@@ -1039,9 +1065,74 @@ input:focus, select:focus, textarea:focus {
   .payment-history-table th, .payment-history-table td { padding: 13px 12px; }
   .payment-detail-layout { grid-template-columns: 1fr; }
   .payment-detail-heading { align-items: flex-start; }
+  .payment-detail-sidebar { position: static; }
+  .payment-course-block { grid-template-columns: auto minmax(0, 1fr); }
+  .payment-course-block a { grid-column: 2; }
+}
+
+@media (max-width: 480px) {
+  .payment-receipt-summary { padding: 21px; }
+  .payment-detail-section-heading { flex-direction: column; }
+  .payment-invoice-chip { max-width: 100%; }
+  .payment-detail-row { flex-direction: column; gap: 7px; }
+  .payment-detail-row strong { text-align: left; }
 }
 
 /* ── Form extras ───────────────────────────────────────── */
+.confirmation-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.56);
+  backdrop-filter: blur(3px);
+  animation: confirmation-fade-in 160ms ease-out;
+}
+
+.confirmation-modal {
+  width: min(440px, 100%);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 16px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: 0 28px 70px rgba(15, 23, 42, 0.24);
+  animation: confirmation-pop-in 180ms ease-out;
+}
+
+.confirmation-icon { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; }
+.confirmation-icon.danger { color: #b42318; background: #fef3f2; }
+.confirmation-icon.warning { color: #b54708; background: #fffaeb; }
+.confirmation-copy h2 { margin: 1px 0 7px; color: var(--foreground); font-size: 19px; line-height: 1.35; }
+.confirmation-copy p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.55; }
+.confirmation-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
+.confirmation-cancel, .confirmation-submit { min-height: 40px; padding: 9px 15px; border: 1px solid transparent; border-radius: 9px; font: inherit; font-size: 14px; font-weight: 750; cursor: pointer; }
+.confirmation-cancel { color: var(--foreground); border-color: var(--line); background: var(--surface); }
+.confirmation-cancel:hover { background: var(--surface-soft); }
+.confirmation-submit.danger { color: #fff; background: #dc2626; }
+.confirmation-submit.danger:hover { background: #b91c1c; }
+.confirmation-submit.warning { color: #fff; background: #d97706; }
+.confirmation-submit.warning:hover { background: #b45309; }
+.confirmation-cancel:focus-visible, .confirmation-submit:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 30%, transparent); outline-offset: 2px; }
+
+@keyframes confirmation-fade-in { from { opacity: 0; } }
+@keyframes confirmation-pop-in { from { opacity: 0; transform: translateY(8px) scale(0.98); } }
+
+@media (max-width: 480px) {
+  .confirmation-backdrop { align-items: end; padding: 12px; }
+  .confirmation-modal { grid-template-columns: 1fr; gap: 12px; padding: 18px; }
+  .confirmation-actions { flex-direction: column-reverse; }
+  .confirmation-cancel, .confirmation-submit { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confirmation-backdrop, .confirmation-modal { animation: none; }
+}
+
 .form-footer {
   margin-top: 18px;
   text-align: center;

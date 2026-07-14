@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/components/AuthProvider";
 import { ChatWidget } from "@/components/ChatWidget";
 import { ToastProvider } from "@/components/Toast";
+import { ConfirmationProvider } from "@/components/ConfirmationModal";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -30,8 +31,10 @@ export default function RootLayout({
       <body>
         <AuthProvider>
           <ToastProvider>
-            {children}
-            <ChatWidget />
+            <ConfirmationProvider>
+              {children}
+              <ChatWidget />
+            </ConfirmationProvider>
           </ToastProvider>
         </AuthProvider>
       </body>

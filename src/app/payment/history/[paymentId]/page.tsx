@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, CalendarClock, CreditCard, FileText, GraduationCap, Hash, Landmark } from "lucide-react";
+import { ArrowLeft, CalendarClock, CheckCircle2, Clock3, CreditCard, FileText, GraduationCap, Hash, Landmark, ReceiptText, ShieldCheck, XCircle } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { AuthGate } from "@/components/AuthGate";
 import { ErrorState } from "@/components/ErrorState";
 import { StudentShell } from "@/components/StudentShell";
-import type { Payment, PaymentStatus } from "@/lib/types";
+import type { Course, Payment, PaymentStatus } from "@/lib/types";
 import { formatApiDate } from "@/lib/date";
+import { courseService } from "@/services/course.service";
 import { paymentService } from "@/services/payment.service";
 
 const statusLabel: Record<PaymentStatus, string> = {
@@ -25,9 +26,18 @@ function statusClass(status: PaymentStatus) {
   return "danger";
 }
 
+const statusDescription: Record<PaymentStatus, string> = {
+  PENDING: "Giao dịch đang chờ bạn hoàn tất thanh toán.",
+  PAID: "Thanh toán đã được xác nhận thành công.",
+  CANCELLED: "Giao dịch đã được hủy theo yêu cầu.",
+  EXPIRED: "Giao dịch đã quá thời hạn thanh toán 24 giờ.",
+  FAILED: "Giao dịch không thể hoàn tất.",
+};
+
 export default function PaymentDetailPage() {
   const params = useParams<{ paymentId: string }>();
   const [payment, setPayment] = useState<Payment | null>(null);
+  const [course, setCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -35,7 +45,13 @@ export default function PaymentDetailPage() {
     try {
       setLoading(true);
       setError("");
-      setPayment(await paymentService.getPayment(params.paymentId));
+      const nextPayment = await paymentService.getPayment(params.paymentId);
+      setPayment(nextPayment);
+      try {
+        setCourse(await courseService.getCourse(nextPayment.courseId));
+      } catch {
+        setCourse(null);
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Không tải được chi tiết giao dịch.");
     } finally {
@@ -65,24 +81,43 @@ export default function PaymentDetailPage() {
           <ErrorState message={error} onRetry={loadPayment} />
         ) : payment ? (
           <section className="payment-detail-layout">
-            <article className="card p-6 payment-detail-summary">
-              <span className="eyebrow">Số tiền</span>
-              <strong className="payment-detail-total">{Number(payment.amount || 0).toLocaleString("vi-VN")}đ</strong>
-              {payment.status === "PENDING" && payment.providerOrderCode && (
-                <Link className="primary-button" href={`/payment/checkout?orderCode=${payment.providerOrderCode}`}>
-                  <CreditCard size={17} /> Tiếp tục thanh toán
-                </Link>
-              )}
-            </article>
+            <aside className="payment-detail-sidebar">
+              <article className={`card payment-receipt-summary ${statusClass(payment.status)}`}>
+                <div className="payment-receipt-icon"><ReceiptText size={25} /></div>
+                <span className="eyebrow">Tổng thanh toán</span>
+                <strong className="payment-detail-total">{Number(payment.amount || 0).toLocaleString("vi-VN")}đ</strong>
+                <div className="payment-receipt-divider" />
+                <div className="payment-status-line">
+                  {payment.status === "PAID" ? <CheckCircle2 size={20} /> : payment.status === "PENDING" ? <Clock3 size={20} /> : <XCircle size={20} />}
+                  <div><strong>{statusLabel[payment.status]}</strong><span>{statusDescription[payment.status]}</span></div>
+                </div>
+                {payment.status === "PENDING" && payment.providerOrderCode && (
+                  <Link className="primary-button" href={`/payment/checkout?orderCode=${payment.providerOrderCode}`}>
+                    <CreditCard size={17} /> Tiếp tục thanh toán
+                  </Link>
+                )}
+              </article>
+              <div className="payment-safe-note"><ShieldCheck size={18} /><span>Thông tin giao dịch được bảo vệ và đối soát qua PayOS.</span></div>
+            </aside>
 
             <article className="card p-6 payment-detail-card">
-              <div className="payment-detail-row"><span><FileText size={16} /> Mã hóa đơn</span><strong>{payment.invoiceCode || "—"}</strong></div>
-              <div className="payment-detail-row"><span><Hash size={16} /> Mã đơn hàng</span><strong>{payment.providerOrderCode ? `#${payment.providerOrderCode}` : "—"}</strong></div>
-              <div className="payment-detail-row"><span><GraduationCap size={16} /> Khóa học</span><strong>{payment.courseId}</strong></div>
-              <div className="payment-detail-row"><span><Landmark size={16} /> Nhà cung cấp</span><strong>{payment.provider || "—"}</strong></div>
-              <div className="payment-detail-row"><span><CalendarClock size={16} /> Thời gian tạo</span><strong>{formatApiDate(payment.createdAt || payment.createdDate || payment.displayDate, payment.providerOrderCode)}</strong></div>
-              <div className="payment-detail-row"><span><CalendarClock size={16} /> Thời gian thanh toán</span><strong>{formatApiDate(payment.paidAt)}</strong></div>
-              <div className="payment-detail-row"><span><Hash size={16} /> Mã giao dịch</span><strong>{payment.providerTransactionId || "—"}</strong></div>
+              <div className="payment-detail-section-heading">
+                <div><span className="eyebrow">Hóa đơn điện tử</span><h2>Thông tin giao dịch</h2></div>
+                <span className="payment-invoice-chip">{payment.invoiceCode || "Chưa phát hành"}</span>
+              </div>
+              <div className="payment-course-block">
+                <div className="payment-course-icon"><GraduationCap size={22} /></div>
+                <div><span>Khóa học</span><strong>{course?.name || "Khóa học đã đăng ký"}</strong><small>{course?.code || payment.courseId}</small></div>
+                <Link href={`/courses/${payment.courseId}`}>Xem khóa học</Link>
+              </div>
+              <div className="payment-detail-list">
+                <div className="payment-detail-row"><span><FileText size={16} /> Mã hóa đơn</span><strong>{payment.invoiceCode || "—"}</strong></div>
+                <div className="payment-detail-row"><span><Hash size={16} /> Mã đơn hàng</span><strong>{payment.providerOrderCode ? `#${payment.providerOrderCode}` : "—"}</strong></div>
+                <div className="payment-detail-row"><span><Landmark size={16} /> Cổng thanh toán</span><strong>{payment.provider || "—"}</strong></div>
+                <div className="payment-detail-row"><span><CalendarClock size={16} /> Thời gian tạo</span><strong>{formatApiDate(payment.createdAt || payment.createdDate || payment.displayDate, payment.providerOrderCode)}</strong></div>
+                <div className="payment-detail-row"><span><CalendarClock size={16} /> Thời gian thanh toán</span><strong>{formatApiDate(payment.paidAt)}</strong></div>
+                <div className="payment-detail-row"><span><Hash size={16} /> Mã giao dịch</span><strong>{payment.providerTransactionId || "—"}</strong></div>
+              </div>
             </article>
           </section>
         ) : null}

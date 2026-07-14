@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Ban, CreditCard, ReceiptText } from "lucide-react";
 import { AuthGate } from "@/components/AuthGate";
 import { ActionMenu } from "@/components/ActionMenu";
+import { useConfirmation } from "@/components/ConfirmationModal";
 import { StudentShell } from "@/components/StudentShell";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
@@ -34,11 +35,13 @@ function paymentStatusClass(status: PaymentStatus) {
 }
 
 export default function PaymentHistoryPage() {
+  const { confirm } = useConfirmation();
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancellingOrderCode, setCancellingOrderCode] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [actionError, setActionError] = useState("");
+  const cancellationRequestsRef = useRef(new Set<number>());
 
   const loadPayments = useCallback(async () => {
     setLoading(true);
@@ -62,9 +65,16 @@ export default function PaymentHistoryPage() {
   }, [loadPayments]);
 
   const cancelPayment = async (payment: Payment) => {
-    if (!payment.providerOrderCode || !window.confirm("Bạn có chắc muốn hủy giao dịch thanh toán này?")) return;
+    if (!payment.providerOrderCode || cancellationRequestsRef.current.has(payment.providerOrderCode)) return;
+    const accepted = await confirm({
+      title: "Hủy thanh toán?",
+      description: "Giao dịch đang chờ sẽ bị hủy và mã QR hoặc đường dẫn PayOS hiện tại sẽ không thể tiếp tục sử dụng.",
+      confirmLabel: "Hủy thanh toán",
+    });
+    if (!accepted || cancellationRequestsRef.current.has(payment.providerOrderCode)) return;
 
     try {
+      cancellationRequestsRef.current.add(payment.providerOrderCode);
       setCancellingOrderCode(payment.providerOrderCode);
       setActionError("");
       const updated = await paymentService.cancelPaymentByPayosOrderCode(payment.providerOrderCode);
@@ -74,6 +84,7 @@ export default function PaymentHistoryPage() {
     } catch (err: unknown) {
       setActionError(err instanceof Error ? err.message : "Không hủy được giao dịch thanh toán.");
     } finally {
+      cancellationRequestsRef.current.delete(payment.providerOrderCode);
       setCancellingOrderCode(null);
     }
   };
