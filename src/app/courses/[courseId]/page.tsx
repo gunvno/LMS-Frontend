@@ -168,7 +168,7 @@ export default function CourseDetailPage({
           <div style={{ marginTop: 24 }}>
             {enrollment ? (
               <Link className="primary-button large" href={`/learn/${courseId}`}>
-                Vào học
+                {enrollment.status === "COMPLETED" ? "Học lại" : "Vào học"}
               </Link>
             ) : isAuthenticated ? (
               <button

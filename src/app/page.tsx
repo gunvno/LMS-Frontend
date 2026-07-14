@@ -200,7 +200,7 @@ export default function Home() {
               <strong>{verifyResult.courseName || "Chứng chỉ"}</strong>
               <span>Mã: {verifyResult.certificateCode}</span>
               <span style={{ color: "var(--success)", fontWeight: 800 }}>
-                {verifyResult.status === "ACTIVE" ? "Còn hiệu lực" : verifyResult.status}
+                {verifyResult.status === "ISSUED" ? "Đã cấp" : verifyResult.status}
               </span>
             </div>
           )}

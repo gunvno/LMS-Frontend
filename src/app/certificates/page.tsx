@@ -19,8 +19,7 @@ function normalizeList<T>(data: unknown): T[] {
 }
 
 const statusLabels: Record<string, { label: string; className: string }> = {
-  ACTIVE: { label: "Còn hiệu lực", className: "status-active" },
-  EXPIRED: { label: "Hết hạn", className: "status-expired" },
+  ISSUED: { label: "Đã cấp", className: "status-active" },
   REVOKED: { label: "Đã thu hồi", className: "status-revoked" },
 };
 

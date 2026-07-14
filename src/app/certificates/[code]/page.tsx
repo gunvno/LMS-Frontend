@@ -9,7 +9,7 @@ import type { Certificate } from "@/lib/types";
 import { Award, CheckCircle, XCircle } from "lucide-react";
 
 const statusLabels: Record<string, { label: string; icon: React.ReactNode }> = {
-  ACTIVE: { label: "Còn hiệu lực", icon: <CheckCircle size={20} color="var(--success)" /> },
+  ISSUED: { label: "Đã cấp", icon: <CheckCircle size={20} color="var(--success)" /> },
   EXPIRED: { label: "Hết hạn", icon: <XCircle size={20} color="var(--warning)" /> },
   REVOKED: { label: "Đã thu hồi", icon: <XCircle size={20} color="var(--danger)" /> },
 };

@@ -9,7 +9,7 @@ import { useToast } from "@/components/Toast";
 import { courseService } from "@/services/course.service";
 import { learningService } from "@/services/learning.service";
 import { quizService } from "@/services/quiz.service";
-import type { Course, Lesson, LessonResource, Quiz } from "@/lib/types";
+import type { Course, Enrollment, Lesson, LessonResource, Quiz } from "@/lib/types";
 import { CheckCircle, PlayCircle, Lock, ChevronLeft, ChevronRight, Download, ExternalLink, FileText, ListChecks } from "lucide-react";
 
 function normalizeList<T>(data: unknown): T[] {
@@ -39,18 +39,30 @@ export default function LearnPage({
   const [error, setError] = useState("");
   const [completing, setCompleting] = useState(false);
   const [completedLessons, setCompletedLessons] = useState<Set<string>>(new Set());
+  const [courseCompleted, setCourseCompleted] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const [courseData, lessonData] = await Promise.all([
+      const [courseData, lessonData, enrollmentData] = await Promise.all([
         courseService.getCourse(courseId),
         courseService.getLessonsByCourse(courseId),
+        learningService.getMyCourses(),
       ]);
       setCourse(courseData);
       const lessonList = normalizeList<Lesson>(lessonData)
         .sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0));
+      const enrollment = normalizeList<Enrollment>(enrollmentData)
+        .find((item) => item.courseId === courseId);
+      const isCompleted = enrollment?.status === "COMPLETED";
+      setCourseCompleted(isCompleted);
+      setCompletedLessons(isCompleted
+        ? new Set(lessonList.map((lesson) => lesson.id))
+        : new Set());
+      if (isCompleted) {
+        learningService.completeCourse(courseId).catch(() => {});
+      }
       setLessons(lessonList);
       if (lessonList.length > 0) {
         const firstAccessibleIndex = lessonList.findIndex((lesson) => !lesson.locked);
@@ -166,6 +178,12 @@ export default function LearnPage({
         await courseService.getLessonsByCourse(courseId)
       ).sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0));
       setLessons(refreshed);
+      const completedEnrollment = await learningService.completeCourse(courseId).catch(() => null);
+      if (completedEnrollment?.status === "COMPLETED") {
+        setCourseCompleted(true);
+        setCompletedLessons(new Set(refreshed.map((lesson) => lesson.id)));
+        toast.success("Bạn đã hoàn thành khóa học và được cấp chứng chỉ.");
+      }
       // Auto-move to the newly unlocked next lesson.
       if (currentIndex < refreshed.length - 1) {
         const next = refreshed[currentIndex + 1];
@@ -219,6 +237,12 @@ export default function LearnPage({
             <Link href={`/courses/${courseId}`} className="back-link">
               ← Quay lại khóa học
             </Link>
+
+            {courseCompleted && (
+              <div className="form-success" style={{ marginBottom: 16 }}>
+                Bạn đã hoàn thành khóa học. Bạn vẫn có thể mở lại mọi bài học bất cứ lúc nào.
+              </div>
+            )}
 
             {currentLesson ? (
               <>

@@ -67,7 +67,7 @@ export function CourseCard({ course, enrollment }: CourseCardProps) {
           <span>{priceText}</span>
           {isEnrolled ? (
             <Link className="primary-button small-button" href={`/learn/${course.id}`}>
-              Tiếp tục
+              {enrollment.status === "COMPLETED" ? "Xem lại" : "Tiếp tục"}
             </Link>
           ) : (
             <Link className="ghost-button small-button" href={`/courses/${course.id}`}>

@@ -31,10 +31,10 @@ export const learningService = {
       `/learning/api/v1/lessons/${lessonId}/complete`
     ),
 
-  /** Hoàn thành khóa học (kiểm tra điều kiện và sinh certificate) */
-  completeEnrollment: (enrollmentId: string) =>
-    api.post<unknown>(
-      `/learning/api/v1/enrollments/${enrollmentId}/complete`
+  /** Đánh giá hoàn thành khóa học và sinh chứng chỉ nếu đủ điều kiện */
+  completeCourse: (courseId: string) =>
+    api.post<Enrollment>(
+      `/learning/api/v1/courses/${courseId}/complete`
     ),
 
   /** Lấy chứng chỉ của user hiện tại */
