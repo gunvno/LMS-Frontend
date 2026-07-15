@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AuthGate } from "@/components/AuthGate";
 import { StudentShell } from "@/components/StudentShell";
 import { useToast } from "@/components/Toast";
@@ -9,6 +10,7 @@ import { authService } from "@/services/auth.service";
 import { Key } from "lucide-react";
 
 export default function ChangePasswordPage() {
+  const router = useRouter();
   const toast = useToast();
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -44,6 +46,7 @@ export default function ChangePasswordPage() {
       setOldPassword("");
       setNewPassword("");
       setConfirmPassword("");
+      router.replace("/profile");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Đổi mật khẩu thất bại.";
       setError(msg);

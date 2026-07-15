@@ -85,9 +85,14 @@ async function chatRequest<T>(
   const headers = new Headers(options.headers);
   headers.set("Content-Type", "application/json");
   headers.set("Accept-Language", "vi");
+  headers.set("X-Client-Portal", "STUDENT");
   if (accessToken) headers.set("X-Chat-Token", accessToken);
 
-  const response = await fetch(`${BASE_URL}${path}`, { ...options, headers });
+  const response = await fetch(`${BASE_URL}${path}`, {
+    ...options,
+    credentials: "include",
+    headers,
+  });
   const payload = await response.json().catch(() => null) as ApiEnvelope<T> | null;
   if (!response.ok || (payload?.errorCode && payload.errorCode !== "EV-200")) {
     throw new Error(payload?.message || `Không thể kết nối trợ lý (${response.status})`);

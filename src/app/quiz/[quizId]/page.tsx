@@ -7,7 +7,9 @@ import { StudentShell } from "@/components/StudentShell";
 import { ErrorState } from "@/components/ErrorState";
 import { useToast } from "@/components/Toast";
 import { quizService } from "@/services/quiz.service";
-import type { Quiz, Question, Answer, QuizAttempt } from "@/lib/types";
+import type { Quiz, Question, Answer, QuizAttempt, QuizAttemptHistory } from "@/lib/types";
+import { formatDurationMinutes, formatViDateTime } from "@/lib/date-time";
+import { CheckCircle2, Clock3, History, Target, Trophy, XCircle } from "lucide-react";
 
 function normalizeList<T>(data: unknown): T[] {
   if (Array.isArray(data)) return data as T[];
@@ -18,6 +20,123 @@ function normalizeList<T>(data: unknown): T[] {
 
 interface QuestionWithAnswers extends Question {
   answers: Answer[];
+}
+
+function formatScore(score: number) {
+  return new Intl.NumberFormat("vi-VN", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(score);
+}
+
+function AttemptHistory({ attempts }: { attempts: QuizAttemptHistory[] }) {
+  const completedAttempts = attempts.flatMap((item, index) => {
+    const score = Number(item.score);
+    const submittedLabel = formatViDateTime(item.submittedAt);
+    if (item.status !== "SUBMITTED"
+      || !Number.isFinite(score)
+      || typeof item.passed !== "boolean"
+      || !submittedLabel) {
+      return [];
+    }
+    const attemptNumber = Number(item.attemptNumber);
+    return [{
+      ...item,
+      attemptNumber: Number.isFinite(attemptNumber) && attemptNumber > 0
+        ? attemptNumber
+        : attempts.length - index,
+      score,
+      submittedLabel,
+      duration: formatDurationMinutes(item.startedAt, item.submittedAt),
+    }];
+  });
+  const bestScore = completedAttempts.length > 0
+    ? Math.max(...completedAttempts.map((item) => item.score))
+    : 0;
+  const passedAttempts = completedAttempts.filter((item) => item.passed).length;
+  const latestAttempt = completedAttempts[0];
+
+  return (
+    <section className="quiz-attempt-history">
+      <div className="quiz-attempt-history-heading">
+        <div className="quiz-history-title">
+          <span className="quiz-history-title-icon"><History size={22} /></span>
+          <div>
+            <span className="eyebrow">Kết quả của bạn</span>
+            <h2>Lịch sử làm quiz</h2>
+            <p>Xem lại điểm số của từng lần bạn đã hoàn thành và nộp bài.</p>
+          </div>
+        </div>
+        <span className="quiz-history-count">{completedAttempts.length} lần đã nộp</span>
+      </div>
+
+      {completedAttempts.length === 0 ? (
+        <div className="quiz-history-empty">
+          <span><History size={28} /></span>
+          <strong>Chưa có lịch sử làm bài</strong>
+          <p>Kết quả sẽ xuất hiện tại đây sau khi bạn nộp quiz.</p>
+        </div>
+      ) : (
+        <>
+          <div className="quiz-history-summary">
+            <article className="quiz-history-summary-card primary">
+              <span><Trophy size={20} /></span>
+              <div>
+                <small>Điểm cao nhất</small>
+                <strong>{formatScore(bestScore)}%</strong>
+              </div>
+            </article>
+            <article className="quiz-history-summary-card success">
+              <span><Target size={20} /></span>
+              <div>
+                <small>Số lần đạt</small>
+                <strong>{passedAttempts}/{completedAttempts.length}</strong>
+              </div>
+            </article>
+            <article className="quiz-history-summary-card neutral">
+              <span><Clock3 size={20} /></span>
+              <div>
+                <small>Lần nộp gần nhất</small>
+                <strong>{latestAttempt.submittedLabel}</strong>
+              </div>
+            </article>
+          </div>
+
+          <div className="quiz-history-list-heading">
+            <strong>Chi tiết từng lần làm</strong>
+            <span>Mới nhất trước</span>
+          </div>
+          <div className="quiz-history-list">
+            {completedAttempts.map((item) => {
+              return (
+                <article className={`quiz-history-item ${item.passed ? "passed" : "failed"}`} key={item.id}>
+                  <span className="quiz-history-number">{item.attemptNumber}</span>
+                  <div className="quiz-history-attempt">
+                    <div>
+                      <strong>Lần làm thứ {item.attemptNumber}</strong>
+                      <span className="quiz-history-submitted"><CheckCircle2 size={14} /> Đã nộp</span>
+                    </div>
+                    <span className="quiz-history-time">
+                      <Clock3 size={15} /> Nộp lúc {item.submittedLabel}
+                      {item.duration && <em>• Hoàn thành trong {item.duration}</em>}
+                    </span>
+                  </div>
+                  <div className="quiz-history-score">
+                    <span>Điểm số</span>
+                    <strong>{formatScore(item.score)}%</strong>
+                  </div>
+                  <div className={`quiz-history-status ${item.passed ? "passed" : "failed"}`}>
+                    {item.passed ? <CheckCircle2 size={18} /> : <XCircle size={18} />}
+                    <span>{item.passed ? "Đạt yêu cầu" : "Chưa đạt"}</span>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </section>
+  );
 }
 
 export default function QuizAttemptPage({
@@ -31,18 +150,28 @@ export default function QuizAttemptPage({
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [questions, setQuestions] = useState<QuestionWithAnswers[]>([]);
   const [attempt, setAttempt] = useState<QuizAttempt | null>(null);
+  const [attemptHistory, setAttemptHistory] = useState<QuizAttemptHistory[]>([]);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({});
   const [result, setResult] = useState<QuizAttempt | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
+  const refreshAttemptHistory = useCallback(async () => {
+    const history = await quizService.getAttemptHistory(quizId);
+    setAttemptHistory(history);
+  }, [quizId]);
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const quizData = await quizService.getQuiz(quizId);
+      const [quizData, history] = await Promise.all([
+        quizService.getQuiz(quizId),
+        quizService.getAttemptHistory(quizId),
+      ]);
       setQuiz(quizData);
+      setAttemptHistory(history);
 
       const questionData = await quizService.getQuestions(quizId);
       const questionList = normalizeList<Question>(questionData);
@@ -100,6 +229,7 @@ export default function QuizAttemptPage({
     try {
       const resultData = await quizService.submitAttempt(attempt.id, answers);
       setResult(resultData);
+      void refreshAttemptHistory().catch(() => undefined);
       if (resultData.passed) {
         toast.success("Chúc mừng! Bạn đã đạt quiz.");
       } else {
@@ -169,6 +299,7 @@ export default function QuizAttemptPage({
                 </Link>
               </div>
             </div>
+            <AttemptHistory attempts={attemptHistory} />
           </section>
         </StudentShell>
       </AuthGate>
@@ -247,6 +378,7 @@ export default function QuizAttemptPage({
               </div>
             </>
           )}
+          <AttemptHistory attempts={attemptHistory} />
         </section>
       </StudentShell>
     </AuthGate>

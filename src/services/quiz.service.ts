@@ -8,6 +8,7 @@ import type {
   Question,
   Answer,
   QuizAttempt,
+  QuizAttemptHistory,
   QuizSubmitAnswer,
   PageData,
 } from "@/lib/types";
@@ -40,6 +41,12 @@ export const quizService = {
     api.post<QuizAttempt>(
       `/quiz/api/v1/quizzes/${quizId}/attempts`,
       wrap({})
+    ),
+
+  /** Lịch sử điểm các lần làm quiz của user hiện tại */
+  getAttemptHistory: (quizId: string) =>
+    api.get<QuizAttemptHistory[]>(
+      `/quiz/api/v1/quizzes/${quizId}/attempts/me`
     ),
 
   /** Nộp bài quiz */

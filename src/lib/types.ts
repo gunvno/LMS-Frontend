@@ -305,6 +305,16 @@ export interface QuizAttempt {
   correctAnswers?: number;
 }
 
+export interface QuizAttemptHistory {
+  id: string;
+  attemptNumber: number;
+  status: QuizAttemptStatus;
+  score: number | string | null;
+  passed: boolean;
+  startedAt: unknown;
+  submittedAt: unknown;
+}
+
 export interface QuizSubmitAnswer {
   questionId: string;
   answerId: string;

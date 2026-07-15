@@ -56,13 +56,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const [currentUser, userRoles, userPerms] = await Promise.all([
         authService.me(),
-        authService.getMyRoles().catch(() => [] as Role[]),
+        authService.getMyRoles(),
         authService.getMyPermissions().catch(() => [] as Permission[]),
       ]);
-      setUser(currentUser);
-      setStoredUser(currentUser);
 
       const roleList = Array.isArray(userRoles) ? userRoles : [];
+      if (!roleList.some((role) => normalizeRole(role) === STUDENT_ROLE)) {
+        throw new Error("The current session does not belong to a student account.");
+      }
+
+      setUser(currentUser);
+      setStoredUser(currentUser);
       setRoles(roleList);
       setStoredRoles(roleList);
 

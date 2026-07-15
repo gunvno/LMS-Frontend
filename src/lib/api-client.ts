@@ -7,6 +7,7 @@ const BASE_URL =
   (typeof process !== "undefined" &&
     process.env?.NEXT_PUBLIC_API_GATEWAY_URL) ||
   "http://localhost:8080";
+const CLIENT_PORTAL = "STUDENT";
 
 function isPublicAuthEndpoint(endpoint: string): boolean {
   return [
@@ -47,6 +48,7 @@ async function performSessionRefresh(): Promise<boolean> {
       credentials: "include",
       headers: {
         "Accept-Language": "vi",
+        "X-Client-Portal": CLIENT_PORTAL,
       },
     });
     return response.ok;
@@ -138,6 +140,7 @@ async function executeBlobRequest(
 ): Promise<Blob> {
   const headers = new Headers(options.headers);
   headers.set("Accept-Language", "vi");
+  headers.set("X-Client-Portal", CLIENT_PORTAL);
 
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     ...options,
@@ -178,6 +181,7 @@ async function executeRequest<T>(
     headers.set("Content-Type", "application/json");
   }
   headers.set("Accept-Language", "vi");
+  headers.set("X-Client-Portal", CLIENT_PORTAL);
 
   const res = await fetch(`${BASE_URL}${endpoint}`, {
     ...options,
