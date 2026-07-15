@@ -657,6 +657,98 @@ input:focus, select:focus, textarea:focus {
   outline: 3px solid rgba(23, 92, 211, 0.2);
   outline-offset: 2px;
 }
+
+.browser-notification-control {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 16px 18px;
+  border: 1px solid #dbe7f6;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #f7faff 0%, #eef5ff 100%);
+}
+
+.browser-notification-control.compact {
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: 9px;
+  margin: 10px 12px;
+  padding: 10px;
+  border-radius: 12px;
+}
+
+.browser-notification-icon {
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.compact .browser-notification-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+}
+
+.browser-notification-control.status-enabled .browser-notification-icon {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.browser-notification-control.status-denied .browser-notification-icon,
+.browser-notification-control.status-unsupported .browser-notification-icon,
+.browser-notification-control.status-error .browser-notification-icon {
+  background: #fee2e2;
+  color: #b42318;
+}
+
+.browser-notification-copy {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.browser-notification-copy strong {
+  color: #101828;
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.browser-notification-copy small {
+  color: #667085;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.compact .browser-notification-copy strong { font-size: 12px; }
+.compact .browser-notification-copy small { font-size: 10px; }
+
+.browser-notification-control button {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  background: #2563eb;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.compact.browser-notification-control button {
+  min-height: 31px;
+  padding: 0 9px;
+  font-size: 10px;
+}
+
+.browser-notification-control .spin { animation: notification-spin 900ms linear infinite; }
+
+@keyframes notification-spin { to { transform: rotate(360deg); } }
 .dashboard-hero, .page-heading {
   display: flex;
   justify-content: space-between;

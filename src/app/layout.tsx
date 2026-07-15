@@ -5,6 +5,7 @@ import { ChatWidget } from "@/components/ChatWidget";
 import { InstructorChatLauncher } from "@/components/InstructorChatLauncher";
 import { ToastProvider } from "@/components/Toast";
 import { ConfirmationProvider } from "@/components/ConfirmationModal";
+import { FirebaseMessagingProvider } from "@/components/FirebaseMessagingProvider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -32,11 +33,13 @@ export default function RootLayout({
       <body>
         <AuthProvider>
           <ToastProvider>
-            <ConfirmationProvider>
-              {children}
-              <InstructorChatLauncher />
-              <ChatWidget />
-            </ConfirmationProvider>
+            <FirebaseMessagingProvider>
+              <ConfirmationProvider>
+                {children}
+                <InstructorChatLauncher />
+                <ChatWidget />
+              </ConfirmationProvider>
+            </FirebaseMessagingProvider>
           </ToastProvider>
         </AuthProvider>
       </body>

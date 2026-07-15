@@ -15,6 +15,11 @@
   margin-bottom: 16px;
 }
 
+.notifications-heading + .browser-notification-control,
+.notifications-action-error + .browser-notification-control {
+  margin-bottom: 18px;
+}
+
 .notifications-list {
   overflow: hidden;
   border: 1px solid var(--border);

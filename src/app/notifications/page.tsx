@@ -6,6 +6,7 @@ import { AuthGate } from "@/components/AuthGate";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { StudentShell } from "@/components/StudentShell";
+import { BrowserNotificationControl } from "@/components/BrowserNotificationControl";
 import { formatApiDate } from "@/lib/date";
 import type { Notice, PageData } from "@/lib/types";
 import { noticeService } from "@/services/notice.service";
@@ -117,6 +118,8 @@ export default function NotificationsPage() {
         </section>
 
         {actionError && <div className="form-error notifications-action-error">{actionError}</div>}
+
+        <BrowserNotificationControl />
 
         {loading ? (
           <div className="loading-card">Đang tải thông báo...</div>

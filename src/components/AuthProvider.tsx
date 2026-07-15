@@ -20,6 +20,7 @@ import {
   setStoredPermissions,
 } from "@/lib/student-auth";
 import { authService } from "@/services/auth.service";
+import { deactivateFirebaseMessaging } from "@/services/firebase-messaging.service";
 
 const STUDENT_ROLE = "STUDENT";
 
@@ -83,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (username: string, password: string) => {
+      await deactivateFirebaseMessaging();
       clearAuth();
       setUser(null);
       setRoles([]);
@@ -125,6 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(async () => {
+    await deactivateFirebaseMessaging();
     try {
       await authService.logout();
     } catch {

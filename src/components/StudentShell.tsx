@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
+import { BrowserNotificationControl } from "@/components/BrowserNotificationControl";
 import { noticeService } from "@/services/notice.service";
 import type { Notice } from "@/lib/types";
 import {
@@ -161,6 +162,7 @@ export function StudentShell({ children }: { children: React.ReactNode }) {
                   Đọc tất cả
                 </button>
               </div>
+              <BrowserNotificationControl compact />
               {noticeError && <p className="notification-error">{noticeError}</p>}
               {noticeLoading && <p className="notification-empty">Đang tải...</p>}
               {!noticeLoading && notices.length === 0 && (
