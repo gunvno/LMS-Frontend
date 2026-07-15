@@ -130,10 +130,6 @@ function CheckoutContent() {
             <div className="payment-detail-row"><span>Mã đơn hàng</span><strong>#{payment.providerOrderCode || "-"}</strong></div>
             <div className="payment-detail-row payment-transfer-row"><span>Nội dung chuyển khoản</span><strong>{payment.transferContent || "-"}</strong><button type="button" className="copy-button" onClick={copyTransferContent} disabled={!payment.transferContent} aria-label="Sao chép nội dung chuyển khoản">{copied ? <Check size={16}/> : <Copy size={16}/>} {copied ? "Đã sao chép" : "Sao chép"}</button></div>
             <div className="payment-waiting-note"><LoaderCircle className="spin" size={18} /> Hệ thống đang tự động kiểm tra thanh toán</div>
-            <button type="button" className="payment-cancel-button" onClick={() => void cancelPayment()} disabled={cancelling}>
-              {cancelling ? <LoaderCircle className="spin" size={17} /> : <Ban size={17} />}
-              {cancelling ? "Đang hủy thanh toán..." : "Hủy và quay lại khóa học"}
-            </button>
           </article>
         </section>}
 

@@ -8,6 +8,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { learningService } from "@/services/learning.service";
 import { courseService } from "@/services/course.service";
 import { connectSupportChat } from "@/services/support-chat-websocket";
+import { mergeChronologicalMessage } from "@/lib/chat-date-time";
 import {
   supportChatService,
   type SupportConversation,
@@ -23,13 +24,6 @@ function listOf<T>(value: unknown): T[] {
     return Array.isArray(content) ? content as T[] : [];
   }
   return [];
-}
-
-function mergeMessage(messages: SupportMessage[], incoming: SupportMessage) {
-  const next = messages.some((message) => message.id === incoming.id)
-    ? messages.map((message) => message.id === incoming.id ? incoming : message)
-    : [...messages, incoming];
-  return next.sort((left, right) => String(left.createdAt || "").localeCompare(String(right.createdAt || "")));
 }
 
 function formatTime(value?: string) {
@@ -94,7 +88,7 @@ export default function MessagesPage() {
     const disconnect = connectSupportChat(
       selectedId,
       (event) => {
-        if (event.message) setMessages((current) => mergeMessage(current, event.message!));
+        if (event.message) setMessages((current) => mergeChronologicalMessage(current, event.message!));
         void supportChatService.markRead(selectedId).catch(() => undefined);
         void loadConversations().catch(() => undefined);
       },
@@ -136,7 +130,7 @@ export default function MessagesPage() {
     setSending(true);
     try {
       const message = await supportChatService.sendMessage(selectedId, content);
-      setMessages((current) => mergeMessage(current, message));
+      setMessages((current) => mergeChronologicalMessage(current, message));
       await loadConversations();
     } catch (err) {
       setInput(content);

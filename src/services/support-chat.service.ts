@@ -1,4 +1,5 @@
 import { api } from "@/lib/api-client";
+import { normalizeChatDateTime } from "@/lib/chat-date-time";
 
 export type SupportConversation = {
   id: string;
@@ -24,6 +25,18 @@ export type SupportMessage = {
   createdAt: string;
 };
 
+export type RawSupportMessage = Omit<SupportMessage, "createdAt"> & {
+  createdAt?: unknown;
+  createdDate?: unknown;
+};
+
+export function normalizeSupportMessage(message: RawSupportMessage): SupportMessage {
+  return {
+    ...message,
+    createdAt: normalizeChatDateTime(message.createdAt ?? message.createdDate),
+  };
+}
+
 export const supportChatService = {
   getConversations: () =>
     api.get<SupportConversation[]>("/chat/api/v1/support/conversations"),
@@ -32,10 +45,12 @@ export const supportChatService = {
     api.post<SupportConversation>(`/chat/api/v1/support/conversations/courses/${courseId}`),
 
   getMessages: (conversationId: string) =>
-    api.get<SupportMessage[]>(`/chat/api/v1/support/conversations/${conversationId}/messages`),
+    api.get<RawSupportMessage[]>(`/chat/api/v1/support/conversations/${conversationId}/messages`)
+      .then((messages) => (messages || []).map(normalizeSupportMessage)),
 
   sendMessage: (conversationId: string, content: string) =>
-    api.post<SupportMessage>(`/chat/api/v1/support/conversations/${conversationId}/messages`, { content }),
+    api.post<RawSupportMessage>(`/chat/api/v1/support/conversations/${conversationId}/messages`, { content })
+      .then(normalizeSupportMessage),
 
   markRead: (conversationId: string) =>
     api.post<void>(`/chat/api/v1/support/conversations/${conversationId}/read`),
