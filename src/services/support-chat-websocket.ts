@@ -1,5 +1,4 @@
 import { Client, type IMessage, type StompSubscription } from "@stomp/stompjs";
-import { getAccessToken } from "@/lib/student-auth";
 import type { SupportMessage } from "@/services/support-chat.service";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_GATEWAY_URL || "http://localhost:8080";
@@ -19,7 +18,6 @@ export function connectSupportChat(
   let subscription: StompSubscription | undefined;
   const client = new Client({
     brokerURL: websocketUrl(),
-    connectHeaders: { Authorization: `Bearer ${getAccessToken() || ""}` },
     reconnectDelay: 5_000,
     connectionTimeout: 8_000,
     heartbeatIncoming: 10_000,

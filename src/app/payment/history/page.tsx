@@ -83,6 +83,7 @@ export default function PaymentHistoryPage() {
       ));
     } catch (err: unknown) {
       setActionError(err instanceof Error ? err.message : "Không hủy được giao dịch thanh toán.");
+      await loadPayments();
     } finally {
       cancellationRequestsRef.current.delete(payment.providerOrderCode);
       setCancellingOrderCode(null);

@@ -4,34 +4,14 @@
 
 import type { User, Permission, Role } from "./types";
 
-const ACCESS_TOKEN_KEY = "lms_access_token";
-const REFRESH_TOKEN_KEY = "lms_refresh_token";
 const USER_KEY = "lms_user";
 const ROLES_KEY = "lms_roles";
 const PERMISSIONS_KEY = "lms_permissions";
 
-// ── Token ─────────────────────────────────────────────────
-
-export function getAccessToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return window.localStorage.getItem(ACCESS_TOKEN_KEY);
-}
-
-export function getRefreshToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return window.localStorage.getItem(REFRESH_TOKEN_KEY);
-}
-
-export function setTokens(accessToken: string, refreshToken?: string) {
-  window.localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
-  if (refreshToken) {
-    window.localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-  }
-}
-
 export function clearAuth() {
-  window.localStorage.removeItem(ACCESS_TOKEN_KEY);
-  window.localStorage.removeItem(REFRESH_TOKEN_KEY);
+  // Remove legacy token keys left by older versions. New sessions use HttpOnly cookies.
+  window.localStorage.removeItem("lms_access_token");
+  window.localStorage.removeItem("lms_refresh_token");
   window.localStorage.removeItem(USER_KEY);
   window.localStorage.removeItem(ROLES_KEY);
   window.localStorage.removeItem(PERMISSIONS_KEY);
@@ -98,10 +78,4 @@ export function hasRole(roleName: string): boolean {
     const current = typeof r === "string" ? r : r.name;
     return current === roleName;
   });
-}
-
-// ── Quick auth check ──────────────────────────────────────
-
-export function isAuthenticated(): boolean {
-  return !!getAccessToken();
 }

@@ -39,6 +39,13 @@ function CheckoutContent() {
       await paymentService.cancelPaymentByPayosOrderCode(payment.providerOrderCode);
       router.replace(`/courses/${payment.courseId}`);
     } catch (err: unknown) {
+      const current = await paymentService
+        .syncPaymentByPayosOrderCode(payment.providerOrderCode)
+        .catch(() => null);
+      if (current?.status === "PAID") {
+        router.replace(`/payment/success?orderCode=${payment.providerOrderCode}`);
+        return;
+      }
       setError(err instanceof Error ? err.message : "Không hủy được giao dịch thanh toán.");
       cancellingRef.current = false;
       setCancelling(false);

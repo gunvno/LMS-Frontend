@@ -8,18 +8,6 @@ const BASE_URL =
     process.env?.NEXT_PUBLIC_API_GATEWAY_URL) ||
   "http://localhost:8080";
 
-// ── Token helpers ─────────────────────────────────────────
-
-function getToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return window.localStorage.getItem("lms_access_token");
-}
-
-function getRefreshToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return window.localStorage.getItem("lms_refresh_token");
-}
-
 function isPublicAuthEndpoint(endpoint: string): boolean {
   return [
     "/auth/token",
@@ -34,13 +22,7 @@ function isPublicAuthEndpoint(endpoint: string): boolean {
   ].some((path) => endpoint === path || endpoint.startsWith(`${path}?`));
 }
 
-type RefreshResponse = {
-  token?: string;
-  accessToken?: string;
-  refreshToken?: string;
-};
-
-let refreshPromise: Promise<string | null> | null = null;
+let refreshPromise: Promise<boolean> | null = null;
 
 function clearSessionAndRedirect() {
   if (typeof window === "undefined") return;
@@ -58,38 +40,24 @@ function clearSessionAndRedirect() {
   }
 }
 
-async function performTokenRefresh(): Promise<string | null> {
-  const refreshToken = getRefreshToken();
-  if (!refreshToken) return null;
-
+async function performSessionRefresh(): Promise<boolean> {
   try {
     const response = await fetch(`${BASE_URL}/auth/refresh`, {
       method: "POST",
+      credentials: "include",
       headers: {
-        "Content-Type": "application/json",
         "Accept-Language": "vi",
       },
-      body: JSON.stringify({ token: refreshToken }),
     });
-    const payload = await response.json().catch(() => null);
-    const data = (payload?.data ?? payload) as RefreshResponse | null;
-    const accessToken = data?.token || data?.accessToken;
-
-    if (!response.ok || !accessToken) return null;
-
-    window.localStorage.setItem("lms_access_token", accessToken);
-    if (data.refreshToken) {
-      window.localStorage.setItem("lms_refresh_token", data.refreshToken);
-    }
-    return accessToken;
+    return response.ok;
   } catch {
-    return null;
+    return false;
   }
 }
 
-function refreshAccessToken(): Promise<string | null> {
+function refreshSession(): Promise<boolean> {
   if (!refreshPromise) {
-    refreshPromise = performTokenRefresh().finally(() => {
+    refreshPromise = performSessionRefresh().finally(() => {
       refreshPromise = null;
     });
   }
@@ -128,9 +96,7 @@ export class ApiError extends Error {
   }
 }
 
-interface ApiClientOptions extends RequestInit {
-  accessTokenBody?: boolean;
-}
+type ApiClientOptions = RequestInit;
 
 const ERROR_MESSAGES: Record<string, string> = {
   "payos.not_configured": "Chưa cấu hình PayOS. Vui lòng kiểm tra biến môi trường thanh toán.",
@@ -140,6 +106,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   "payment.amount_mismatch": "Số tiền thanh toán không khớp với khóa học.",
   "payment.not_found": "Không tìm thấy giao dịch thanh toán.",
   "payment.cannot_cancel": "Chỉ có thể hủy giao dịch đang chờ thanh toán.",
+  "payment.already_paid": "Ngân hàng đã ghi nhận thanh toán nên giao dịch không thể hủy.",
+  "payment.cancel_not_confirmed": "PayOS chưa xác nhận hủy giao dịch. Hệ thống giữ nguyên trạng thái để tránh mất thanh toán.",
   "payment.enrollment_pending": "Thanh toán đã thành công. Hệ thống đang thêm khóa học vào tài khoản của bạn.",
   "payos.cancel_failed": "Không hủy được liên kết thanh toán PayOS. Vui lòng thử lại.",
   "must not be blank": "Vui lòng kiểm tra các trường bắt buộc.",
@@ -168,20 +136,19 @@ async function executeBlobRequest(
   options: RequestInit,
   allowRefresh: boolean
 ): Promise<Blob> {
-  const token = getToken();
   const headers = new Headers(options.headers);
   headers.set("Accept-Language", "vi");
-  if (token) headers.set("Authorization", `Bearer ${token}`);
 
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     ...options,
+    credentials: "include",
     headers,
   });
 
   if (response.status === 401) {
     if (allowRefresh && typeof window !== "undefined") {
-      const refreshedToken = await refreshAccessToken();
-      if (refreshedToken) return executeBlobRequest(endpoint, options, false);
+      const refreshed = await refreshSession();
+      if (refreshed) return executeBlobRequest(endpoint, options, false);
     }
     clearSessionAndRedirect();
     throw new ApiError("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.", 401);
@@ -204,22 +171,17 @@ async function executeRequest<T>(
   options: ApiClientOptions,
   allowRefresh: boolean
 ): Promise<T> {
-  const token = getToken();
   const headers = new Headers(options.headers);
   const publicAuthEndpoint = isPublicAuthEndpoint(endpoint);
-  const { accessTokenBody, ...requestOptions } = options;
 
   if (!headers.has("Content-Type") && !(options.body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
   }
   headers.set("Accept-Language", "vi");
-  if (token && !publicAuthEndpoint) {
-    headers.set("Authorization", `Bearer ${token}`);
-  }
 
   const res = await fetch(`${BASE_URL}${endpoint}`, {
-    ...requestOptions,
-    body: accessTokenBody ? token : requestOptions.body,
+    ...options,
+    credentials: "include",
     headers,
   });
 
@@ -238,8 +200,8 @@ async function executeRequest<T>(
   // Access token expired: refresh once, then retry the original request.
   if (res.status === 401 && !publicAuthEndpoint) {
     if (allowRefresh && typeof window !== "undefined") {
-      const refreshedToken = await refreshAccessToken();
-      if (refreshedToken) {
+      const refreshed = await refreshSession();
+      if (refreshed) {
         return executeRequest<T>(endpoint, options, false);
       }
     }

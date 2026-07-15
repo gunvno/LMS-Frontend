@@ -5,7 +5,6 @@
 import { api, apiClient } from "@/lib/api-client";
 import type {
   LoginRequest,
-  LoginResponse,
   RegisterRequest,
   OtpRequest,
   OtpVerifyRequest,
@@ -20,7 +19,7 @@ import type {
 export const authService = {
   /** Đăng nhập bằng username/password */
   login: (payload: LoginRequest) =>
-    api.post<LoginResponse>("/auth/token", payload),
+    api.post<unknown>("/auth/token", payload),
 
   /** Đăng ký tài khoản học viên */
   register: (data: RegisterRequest) =>
@@ -35,23 +34,26 @@ export const authService = {
     api.post<unknown>("/auth/otp-verify", data),
 
   /** Lấy thông tin user hiện tại */
-  me: () => apiClient<User>("/auth/userinfo", {
-    method: "POST",
-    headers: { "Content-Type": "text/plain" },
-    accessTokenBody: true,
-  }),
-
-  /** Kiểm tra token còn hợp lệ */
-  introspect: (token: string) =>
-    api.post<{ valid: boolean }>("/auth/introspect", { token }),
-
-  /** Refresh access token */
-  refreshToken: (token: string) =>
-    api.post<LoginResponse>("/auth/refresh", { token }),
+  me: async () => {
+    const data = await apiClient<{
+      sub?: string;
+      preferred_username?: string;
+      email?: string;
+      given_name?: string;
+      family_name?: string;
+    }>("/auth/userinfo", { method: "POST" });
+    return {
+      id: data.sub || "",
+      username: data.preferred_username || "",
+      email: data.email || "",
+      firstName: data.given_name || data.preferred_username || "",
+      lastName: data.family_name || "",
+    } satisfies User;
+  },
 
   /** Đăng xuất */
-  logout: (token: string) =>
-    api.post<unknown>("/auth/logout", { token }),
+  logout: () =>
+    api.post<unknown>("/auth/logout"),
 
   /** Đổi mật khẩu */
   changePassword: (data: ChangePasswordRequest) =>

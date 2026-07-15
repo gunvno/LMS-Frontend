@@ -50,17 +50,6 @@ export interface LoginRequest {
   password: string;
 }
 
-export interface LoginResponse {
-  token: string;
-  accessToken?: string;
-  refreshToken?: string;
-  authenticated?: boolean;
-  userName?: string;
-  email?: string;
-  firstName?: string;
-  lastName?: string;
-}
-
 export interface RegisterRequest {
   firstName: string;
   lastName: string;
