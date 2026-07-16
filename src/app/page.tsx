@@ -9,6 +9,7 @@ import type { Course, Certificate } from "@/lib/types";
 import { useToast } from "@/components/Toast";
 import { useAuth } from "@/components/AuthProvider";
 import { BookOpen, Award, TrendingUp, ListChecks, Search } from "lucide-react";
+import { validateCertificateCode } from "@/lib/form-validation";
 
 function normalizeList<T>(data: unknown): T[] {
   if (Array.isArray(data)) return data as T[];
@@ -35,7 +36,11 @@ export default function Home() {
   }, []);
 
   const verifyCertificate = async () => {
-    if (!verifyCode.trim()) return;
+    const validationError = validateCertificateCode(verifyCode);
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
     setVerifying(true);
     setVerifyResult(null);
     try {
@@ -183,8 +188,15 @@ export default function Home() {
           <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
             <input
               value={verifyCode}
-              onChange={(e) => setVerifyCode(e.target.value)}
+              onChange={(e) => setVerifyCode(e.target.value.toUpperCase())}
               placeholder="Nhập mã chứng chỉ..."
+              maxLength={17}
+              autoCapitalize="characters"
+              spellCheck={false}
+              aria-label="Mã chứng chỉ"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") void verifyCertificate();
+              }}
               style={{ flex: 1 }}
             />
             <button

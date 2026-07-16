@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authService } from "@/services/auth.service";
+import { INPUT_LIMITS, validateEmail, validateOtp, validatePassword } from "@/lib/form-validation";
 
 type Step = "EMAIL" | "RESET";
 
@@ -20,10 +21,8 @@ export default function ForgotPasswordPage() {
 
   const requestOtp = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!email.trim()) {
-      setError("Vui lòng nhập email.");
-      return;
-    }
+    const emailError = validateEmail(email);
+    if (emailError) return setError(emailError);
 
     try {
       setLoading(true);
@@ -40,14 +39,10 @@ export default function ForgotPasswordPage() {
 
   const resetPassword = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!otp.trim()) {
-      setError("Vui lòng nhập mã OTP.");
-      return;
-    }
-    if (newPassword.length < 6) {
-      setError("Mật khẩu mới phải có ít nhất 6 ký tự.");
-      return;
-    }
+    const otpError = validateOtp(otp);
+    if (otpError) return setError(otpError);
+    const passwordError = validatePassword(newPassword, "Mật khẩu mới");
+    if (passwordError) return setError(passwordError);
     if (newPassword !== confirmPassword) {
       setError("Mật khẩu nhập lại không khớp.");
       return;
@@ -95,6 +90,9 @@ export default function ForgotPasswordPage() {
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 placeholder="email@example.com"
+                maxLength={INPUT_LIMITS.email}
+                autoComplete="email"
+                aria-invalid={Boolean(error) && Boolean(validateEmail(email))}
                 disabled={loading}
               />
             </label>
@@ -110,9 +108,12 @@ export default function ForgotPasswordPage() {
               <span>Mã OTP</span>
               <input
                 value={otp}
-                onChange={(event) => setOtp(event.target.value)}
+                onChange={(event) => setOtp(event.target.value.replace(/\D/g, "").slice(0, 6))}
                 placeholder="Nhập mã 6 ký tự"
                 maxLength={6}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                aria-invalid={Boolean(error) && Boolean(validateOtp(otp))}
                 disabled={loading}
                 style={{ textAlign: "center", letterSpacing: "0.3em", fontSize: 20, fontWeight: 900 }}
               />
@@ -124,6 +125,9 @@ export default function ForgotPasswordPage() {
                 value={newPassword}
                 onChange={(event) => setNewPassword(event.target.value)}
                 placeholder="Ít nhất 6 ký tự"
+                minLength={6}
+                maxLength={INPUT_LIMITS.password}
+                autoComplete="new-password"
                 disabled={loading}
               />
             </label>
@@ -134,6 +138,9 @@ export default function ForgotPasswordPage() {
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
                 placeholder="Nhập lại mật khẩu mới"
+                minLength={6}
+                maxLength={INPUT_LIMITS.password}
+                autoComplete="new-password"
                 disabled={loading}
               />
             </label>

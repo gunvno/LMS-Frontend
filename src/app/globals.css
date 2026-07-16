@@ -365,6 +365,11 @@ input:focus, select:focus, textarea:focus {
 .auth-form { display: grid; gap: 16px; margin-top: 22px; }
 .form-field { display: grid; gap: 8px; color: #344054; font-weight: 800; }
 .form-error { padding: 12px; border-radius: 12px; background: #fff1f3; color: var(--danger); font-weight: 800; }
+.field-error { color: var(--danger); font-size: 13px; font-weight: 700; line-height: 1.4; }
+input[aria-invalid="true"], textarea[aria-invalid="true"], select[aria-invalid="true"] {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 12%, transparent);
+}
 .demo-account { margin-top: 18px; padding: 14px; border-radius: 14px; background: var(--surface-soft); color: var(--muted); }
 .demo-account strong, .demo-account span { display: block; }
 .demo-account strong { color: var(--foreground); margin-bottom: 4px; }

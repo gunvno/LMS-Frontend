@@ -6,6 +6,7 @@ import { CourseCard } from "@/components/CourseCard";
 import { StudentShell } from "@/components/StudentShell";
 import { PublicNav } from "@/components/PublicNav";
 import { EmptyState } from "@/components/EmptyState";
+import { INPUT_LIMITS } from "@/lib/form-validation";
 import { ErrorState } from "@/components/ErrorState";
 import { CourseGridSkeleton } from "@/components/LoadingSkeleton";
 import { courseService } from "@/services/course.service";
@@ -112,6 +113,8 @@ export default function CoursesPage() {
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
           placeholder="Tìm khóa học..."
+          maxLength={INPUT_LIMITS.search}
+          aria-label="Tìm khóa học"
         />
         <select
           value={categoryId}

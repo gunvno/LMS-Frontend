@@ -5,6 +5,7 @@ import { FormEvent, Suspense, useCallback, useEffect, useRef, useState } from "r
 import { useRouter, useSearchParams } from "next/navigation";
 import { authService } from "@/services/auth.service";
 import type { RegisterRequest } from "@/lib/types";
+import { validateOtp } from "@/lib/form-validation";
 
 function OtpForm() {
   const router = useRouter();
@@ -62,10 +63,8 @@ function OtpForm() {
 
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!otp.trim()) {
-      setError("Vui lòng nhập mã OTP.");
-      return;
-    }
+    const otpError = validateOtp(otp);
+    if (otpError) return setError(otpError);
     setError("");
     setLoading(true);
     try {
@@ -128,9 +127,12 @@ function OtpForm() {
             <span>Mã OTP</span>
             <input
               value={otp}
-              onChange={(e) => setOtp(e.target.value)}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
               placeholder="Nhập mã 6 ký tự"
               maxLength={6}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              aria-invalid={Boolean(error) && Boolean(validateOtp(otp))}
               disabled={loading}
               autoFocus
               style={{ textAlign: "center", letterSpacing: "0.3em", fontSize: 20, fontWeight: 900 }}

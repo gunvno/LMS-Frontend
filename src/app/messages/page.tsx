@@ -186,7 +186,7 @@ export default function MessagesPage() {
                     <div ref={endRef} />
                   </div>
                   <form className="support-chat-composer" onSubmit={submit}>
-                    <textarea value={input} onChange={(event) => setInput(event.target.value.slice(0, 2000))} placeholder="Nhập tin nhắn..." rows={1} />
+                    <textarea value={input} onChange={(event) => setInput(event.target.value.slice(0, 2000))} placeholder="Nhập tin nhắn..." rows={1} maxLength={2000} aria-label="Nội dung tin nhắn" />
                     <button type="submit" disabled={!input.trim() || sending}><Send size={18} /></button>
                   </form>
                 </>

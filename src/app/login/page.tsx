@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
+import { INPUT_LIMITS, validateExistingPassword, validateLoginIdentifier } from "@/lib/form-validation";
 
 function LoginForm() {
   const router = useRouter();
@@ -20,10 +21,10 @@ function LoginForm() {
 
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!username.trim() || !password.trim()) {
-      setError("Vui lòng nhập tài khoản và mật khẩu.");
-      return;
-    }
+    const usernameError = validateLoginIdentifier(username);
+    if (usernameError) return setError(usernameError);
+    const passwordError = validateExistingPassword(password);
+    if (passwordError) return setError(passwordError);
     setError("");
     setLoading(true);
     try {
@@ -82,6 +83,8 @@ function LoginForm() {
               placeholder="Email hoặc username"
               disabled={loading}
               autoComplete="username"
+              maxLength={INPUT_LIMITS.email}
+              aria-invalid={Boolean(error) && Boolean(validateLoginIdentifier(username))}
             />
           </label>
           <label className="form-field">
@@ -93,6 +96,8 @@ function LoginForm() {
               placeholder="Nhập mật khẩu"
               disabled={loading}
               autoComplete="current-password"
+              maxLength={INPUT_LIMITS.password}
+              aria-invalid={Boolean(error) && Boolean(validateExistingPassword(password))}
             />
           </label>
           {error && <div className="form-error">{error}</div>}

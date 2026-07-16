@@ -8,6 +8,7 @@ import { StudentShell } from "@/components/StudentShell";
 import { useToast } from "@/components/Toast";
 import { authService } from "@/services/auth.service";
 import { Key } from "lucide-react";
+import { INPUT_LIMITS, validateExistingPassword, validatePassword } from "@/lib/form-validation";
 
 export default function ChangePasswordPage() {
   const router = useRouter();
@@ -22,14 +23,10 @@ export default function ChangePasswordPage() {
     e.preventDefault();
     setError("");
 
-    if (!oldPassword || !newPassword || !confirmPassword) {
-      setError("Vui lòng điền đầy đủ các trường.");
-      return;
-    }
-    if (newPassword.length < 6) {
-      setError("Mật khẩu mới phải có ít nhất 6 ký tự.");
-      return;
-    }
+    const oldPasswordError = validateExistingPassword(oldPassword, "Mật khẩu hiện tại");
+    if (oldPasswordError) return setError(oldPasswordError);
+    const newPasswordError = validatePassword(newPassword, "Mật khẩu mới");
+    if (newPasswordError) return setError(newPasswordError);
     if (newPassword !== confirmPassword) {
       setError("Mật khẩu mới và xác nhận không khớp.");
       return;
@@ -80,6 +77,8 @@ export default function ChangePasswordPage() {
                   value={oldPassword}
                   onChange={(e) => setOldPassword(e.target.value)}
                   placeholder="Nhập mật khẩu hiện tại"
+                  maxLength={INPUT_LIMITS.password}
+                  autoComplete="current-password"
                   disabled={loading}
                 />
               </label>
@@ -90,6 +89,9 @@ export default function ChangePasswordPage() {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Ít nhất 6 ký tự"
+                  minLength={6}
+                  maxLength={INPUT_LIMITS.password}
+                  autoComplete="new-password"
                   disabled={loading}
                 />
               </label>
@@ -100,6 +102,9 @@ export default function ChangePasswordPage() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Nhập lại mật khẩu mới"
+                  minLength={6}
+                  maxLength={INPUT_LIMITS.password}
+                  autoComplete="new-password"
                   disabled={loading}
                 />
               </label>

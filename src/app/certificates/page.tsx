@@ -10,6 +10,7 @@ import { useToast } from "@/components/Toast";
 import { learningService } from "@/services/learning.service";
 import type { Certificate } from "@/lib/types";
 import { Award, Search } from "lucide-react";
+import { validateCertificateCode } from "@/lib/form-validation";
 
 function normalizeList<T>(data: unknown): T[] {
   if (Array.isArray(data)) return data as T[];
@@ -52,7 +53,12 @@ export default function CertificatesPage() {
   }, []);
 
   const verifyCertificate = async () => {
-    if (!verifyCode.trim()) return;
+    const validationError = validateCertificateCode(verifyCode);
+    if (validationError) {
+      setVerifyResult(null);
+      setVerifyError(validationError);
+      return;
+    }
     setVerifying(true);
     setVerifyError("");
     setVerifyResult(null);
@@ -132,8 +138,19 @@ export default function CertificatesPage() {
               <p>Nhập mã chứng chỉ để kiểm tra trạng thái hiệu lực.</p>
               <input
                 value={verifyCode}
-                onChange={(e) => setVerifyCode(e.target.value)}
+                onChange={(e) => {
+                  setVerifyCode(e.target.value.toUpperCase());
+                  if (verifyError) setVerifyError("");
+                }}
                 placeholder="Nhập mã chứng chỉ..."
+                maxLength={17}
+                autoCapitalize="characters"
+                spellCheck={false}
+                aria-label="Mã chứng chỉ"
+                aria-invalid={Boolean(verifyError)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") void verifyCertificate();
+                }}
               />
               <button
                 className="primary-button full-button"

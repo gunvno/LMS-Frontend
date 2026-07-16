@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start -p 3001",
     "lint": "eslint",
+    "test:validation": "node --test tests/form-validation.test.mjs",
     "test:date-time": "node --test tests/date-time.test.mjs",
     "test:support-chat": "node --test tests/support-chat-ordering.test.mjs"
   },
